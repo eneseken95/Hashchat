@@ -10,9 +10,22 @@
 		BCB9F16B2E9A615500FC1D72 /* Hashchat.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Hashchat.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		BC66C2752E9BB39B002B6763 /* Exceptions for "Hashchat" folder in "Hashchat" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = BCB9F16A2E9A615500FC1D72 /* Hashchat */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		BCB9F16D2E9A615500FC1D72 /* Hashchat */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				BC66C2752E9BB39B002B6763 /* Exceptions for "Hashchat" folder in "Hashchat" target */,
+			);
 			path = Hashchat;
 			sourceTree = "<group>";
 		};
@@ -256,6 +269,7 @@
 				DEVELOPMENT_TEAM = FVGCA873Z7;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Hashchat/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Hashchat;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.social-networking";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -291,6 +305,7 @@
 				DEVELOPMENT_TEAM = FVGCA873Z7;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Hashchat/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Hashchat;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.social-networking";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
