@@ -11,7 +11,7 @@ import SwiftUI
 struct HashchatApp: App {
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            LoginView()
         }
     }
 }
