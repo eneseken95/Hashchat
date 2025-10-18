@@ -18,11 +18,15 @@ struct LoginView: View {
     @State private var caesarDecryptionShift: Int? = nil
     @State private var vigenereEncryptionKey: String? = nil
     @State private var vigenereDecryptionKey: String? = nil
+    @State private var columnarEncryptionKey: String? = nil
+    @State private var columnarDecryptionKey: String? = nil
+    @State private var hillEncryptionKey: [[Int?]] = [[nil, nil], [nil, nil]]
+    @State private var hillDecryptionKey: [[Int?]] = [[nil, nil], [nil, nil]]
 
     @Namespace private var animationNamespace
+
     private var isLoginDisabled: Bool {
         let trimmedUsername = viewModel.username.trimmingCharacters(in: .whitespaces)
-
         if trimmedUsername.isEmpty { return true }
 
         switch selectedEncryption {
@@ -30,7 +34,13 @@ struct LoginView: View {
             if caesarEncryptionShift == nil { return true }
         case .vigenere:
             if vigenereEncryptionKey?.isEmpty ?? true { return true }
-        case .none:
+        case .columnar:
+            if columnarEncryptionKey?.isEmpty ?? true { return true }
+        case .hill:
+            for row in hillEncryptionKey {
+                if row.contains(where: { $0 == nil }) { return true }
+            }
+        case .rota, .polybius, .pigpen, .none:
             break
         }
 
@@ -39,11 +49,31 @@ struct LoginView: View {
             if caesarDecryptionShift == nil { return true }
         case .vigenere:
             if vigenereDecryptionKey?.isEmpty ?? true { return true }
-        case .none:
+        case .columnar:
+            if columnarDecryptionKey?.isEmpty ?? true { return true }
+        case .hill:
+            for row in hillDecryptionKey {
+                if row.contains(where: { $0 == nil }) { return true }
+            }
+        case .rota, .polybius, .pigpen, .none:
             break
         }
 
         return false
+    }
+
+    private func hillEncBinding(row: Int, col: Int) -> Binding<String> {
+        Binding<String>(
+            get: { hillEncryptionKey[row][col].map { String($0) } ?? "" },
+            set: { newValue in hillEncryptionKey[row][col] = Int(newValue) }
+        )
+    }
+
+    private func hillDecBinding(row: Int, col: Int) -> Binding<String> {
+        Binding<String>(
+            get: { hillDecryptionKey[row][col].map { String($0) } ?? "" },
+            set: { newValue in hillDecryptionKey[row][col] = Int(newValue) }
+        )
     }
 
     var body: some View {
@@ -51,7 +81,7 @@ struct LoginView: View {
             ZStack {
                 Color.white.ignoresSafeArea()
 
-                VStack(spacing: 30) {
+                VStack(spacing: 20) {
                     VStack(spacing: 10) {
                         Image("Hashchat")
                             .resizable()
@@ -89,71 +119,106 @@ struct LoginView: View {
                             .fontWeight(.bold)
                             .foregroundColor(Color.pink)
 
-                        HStack(spacing: 8) {
-                            ForEach(EncryptionType.allCases, id: \.self) { type in
-                                Text(type.rawValue)
-                                    .foregroundColor(selectedEncryption == type ? .white : .gray)
-                                    .fontWeight(.bold)
-                                    .padding(.vertical, 8)
-                                    .padding(.horizontal, 12)
-                                    .frame(minWidth: 105)
-                                    .background(
-                                        ZStack {
-                                            if selectedEncryption == type {
-                                                Color.pink.opacity(0.8)
-                                                    .matchedGeometryEffect(id: "encryption", in: animationNamespace)
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: 8) {
+                                ForEach(EncryptionType.allCases, id: \.self) { type in
+                                    Text(type.rawValue)
+                                        .foregroundColor(selectedEncryption == type ? .white : .gray)
+                                        .fontWeight(.bold)
+                                        .padding(.vertical, 8)
+                                        .padding(.horizontal, 12)
+                                        .frame(minWidth: 105)
+                                        .background(
+                                            ZStack {
+                                                if selectedEncryption == type {
+                                                    Color.pink.opacity(0.8)
+                                                        .matchedGeometryEffect(id: "encryption", in: animationNamespace)
+                                                }
+                                            }
+                                        )
+                                        .cornerRadius(12)
+                                        .onTapGesture {
+                                            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                                selectedEncryption = type
                                             }
                                         }
-                                    )
-                                    .cornerRadius(12)
-                                    .onTapGesture {
-                                        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                                            selectedEncryption = type
-                                        }
-                                    }
+                                }
                             }
+                            .padding(.horizontal)
                         }
-                        .padding(.horizontal)
 
                         if selectedEncryption == .caesar {
-                            HStack {
-                                TextField("Encryption Caesar Shift", text: Binding(
-                                    get: { caesarEncryptionShift.map { String($0) } ?? "" },
-                                    set: { newValue in
-                                        caesarEncryptionShift = Int(newValue)
-                                    }
-                                ))
-                                .keyboardType(.numberPad)
-                                .padding(12)
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 20)
-                                        .stroke(Color.gray.opacity(0.8), lineWidth: 2)
-                                )
-                                .foregroundColor(.black)
-                                .fontWeight(.bold)
-                            }
+                            TextField("Encryption Caesar Shift", text: Binding(
+                                get: { caesarEncryptionShift.map { String($0) } ?? "" },
+                                set: { newValue in caesarEncryptionShift = Int(newValue) }
+                            ))
+                            .keyboardType(.numberPad)
+                            .padding(12)
+                            .overlay(RoundedRectangle(cornerRadius: 20).stroke(Color.gray.opacity(0.8), lineWidth: 2))
+                            .foregroundColor(.black)
+                            .fontWeight(.bold)
                             .padding(.horizontal, 25)
                             .padding(.top, 15)
                         }
 
                         if selectedEncryption == .vigenere {
-                            HStack {
-                                TextField("Encryption Vigenère Key", text: Binding(
-                                    get: { vigenereEncryptionKey ?? "" },
-                                    set: { newValue in
-                                        vigenereEncryptionKey = newValue.isEmpty ? nil : newValue
-                                    }
-                                ))
-                                .padding(12)
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 20)
-                                        .stroke(Color.gray.opacity(0.8), lineWidth: 2)
-                                )
-                                .foregroundColor(.black)
-                                .fontWeight(.bold)
-                            }
+                            TextField("Encryption Vigenère Key", text: Binding(
+                                get: { vigenereEncryptionKey ?? "" },
+                                set: { newValue in vigenereEncryptionKey = newValue.isEmpty ? nil : newValue }
+                            ))
+                            .padding(12)
+                            .overlay(RoundedRectangle(cornerRadius: 20).stroke(Color.gray.opacity(0.8), lineWidth: 2))
+                            .foregroundColor(.black)
+                            .fontWeight(.bold)
                             .padding(.horizontal, 25)
                             .padding(.top, 15)
+                        }
+
+                        if selectedEncryption == .columnar {
+                            TextField("Encryption Columnar Key", text: Binding(
+                                get: { columnarEncryptionKey ?? "" },
+                                set: { newValue in columnarEncryptionKey = newValue.isEmpty ? nil : newValue }
+                            ))
+                            .padding(12)
+                            .overlay(RoundedRectangle(cornerRadius: 20).stroke(Color.gray.opacity(0.8), lineWidth: 2))
+                            .foregroundColor(.black)
+                            .fontWeight(.bold)
+                            .padding(.horizontal, 25)
+                            .padding(.top, 15)
+                        }
+
+                        if selectedEncryption == .hill {
+                            VStack(spacing: 5) {
+                                Text("Enter 2x2 Encryption Hill Cipher Key")
+                                    .foregroundColor(.gray)
+                                    .fontWeight(.bold)
+                                    .padding(.top, 10)
+
+                                HStack {
+                                    TextField("a11", text: hillEncBinding(row: 0, col: 0))
+                                        .keyboardType(.numberPad)
+                                        .textFieldStyle(RoundedBorderTextFieldStyle())
+                                        .overlay(RoundedRectangle(cornerRadius: 5).stroke(Color.gray.opacity(0.8), lineWidth: 1))
+
+                                    TextField("a12", text: hillEncBinding(row: 0, col: 1))
+                                        .keyboardType(.numberPad)
+                                        .textFieldStyle(RoundedBorderTextFieldStyle())
+                                        .overlay(RoundedRectangle(cornerRadius: 5).stroke(Color.gray.opacity(0.8), lineWidth: 1))
+                                }
+
+                                HStack {
+                                    TextField("a21", text: hillEncBinding(row: 1, col: 0))
+                                        .keyboardType(.numberPad)
+                                        .textFieldStyle(RoundedBorderTextFieldStyle())
+                                        .overlay(RoundedRectangle(cornerRadius: 5).stroke(Color.gray.opacity(0.8), lineWidth: 1))
+
+                                    TextField("a22", text: hillEncBinding(row: 1, col: 1))
+                                        .keyboardType(.numberPad)
+                                        .textFieldStyle(RoundedBorderTextFieldStyle())
+                                        .overlay(RoundedRectangle(cornerRadius: 5).stroke(Color.gray.opacity(0.8), lineWidth: 1))
+                                }
+                            }
+                            .padding(.horizontal)
                         }
                     }
 
@@ -163,71 +228,106 @@ struct LoginView: View {
                             .fontWeight(.bold)
                             .foregroundColor(Color.green)
 
-                        HStack(spacing: 8) {
-                            ForEach(DecryptionType.allCases, id: \.self) { type in
-                                Text(type.rawValue)
-                                    .foregroundColor(selectedDecryption == type ? .white : .gray)
-                                    .fontWeight(.bold)
-                                    .padding(.vertical, 8)
-                                    .padding(.horizontal, 12)
-                                    .frame(minWidth: 105)
-                                    .background(
-                                        ZStack {
-                                            if selectedDecryption == type {
-                                                Color.green.opacity(0.8)
-                                                    .matchedGeometryEffect(id: "decryption", in: animationNamespace)
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: 8) {
+                                ForEach(DecryptionType.allCases, id: \.self) { type in
+                                    Text(type.rawValue)
+                                        .foregroundColor(selectedDecryption == type ? .white : .gray)
+                                        .fontWeight(.bold)
+                                        .padding(.vertical, 8)
+                                        .padding(.horizontal, 12)
+                                        .frame(minWidth: 105)
+                                        .background(
+                                            ZStack {
+                                                if selectedDecryption == type {
+                                                    Color.green.opacity(0.8)
+                                                        .matchedGeometryEffect(id: "decryption", in: animationNamespace)
+                                                }
+                                            }
+                                        )
+                                        .cornerRadius(12)
+                                        .onTapGesture {
+                                            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                                selectedDecryption = type
                                             }
                                         }
-                                    )
-                                    .cornerRadius(12)
-                                    .onTapGesture {
-                                        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                                            selectedDecryption = type
-                                        }
-                                    }
+                                }
                             }
+                            .padding(.horizontal)
                         }
-                        .padding(.horizontal)
 
                         if selectedDecryption == .caesar {
-                            HStack {
-                                TextField("Decryption Caesar Shift", text: Binding(
-                                    get: { caesarDecryptionShift.map { String($0) } ?? "" },
-                                    set: { newValue in
-                                        caesarDecryptionShift = Int(newValue)
-                                    }
-                                ))
-                                .keyboardType(.numberPad)
-                                .padding(12)
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 20)
-                                        .stroke(Color.gray.opacity(0.8), lineWidth: 2)
-                                )
-                                .foregroundColor(.black)
-                                .fontWeight(.bold)
-                            }
+                            TextField("Decryption Caesar Shift", text: Binding(
+                                get: { caesarDecryptionShift.map { String($0) } ?? "" },
+                                set: { newValue in caesarDecryptionShift = Int(newValue) }
+                            ))
+                            .keyboardType(.numberPad)
+                            .padding(12)
+                            .overlay(RoundedRectangle(cornerRadius: 20).stroke(Color.gray.opacity(0.8), lineWidth: 2))
+                            .foregroundColor(.black)
+                            .fontWeight(.bold)
                             .padding(.horizontal, 25)
                             .padding(.top, 15)
                         }
 
                         if selectedDecryption == .vigenere {
-                            HStack {
-                                TextField("Decryption Vigenère Key", text: Binding(
-                                    get: { vigenereDecryptionKey ?? "" },
-                                    set: { newValue in
-                                        vigenereDecryptionKey = newValue.isEmpty ? nil : newValue
-                                    }
-                                ))
-                                .padding(12)
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 20)
-                                        .stroke(Color.gray.opacity(0.8), lineWidth: 2)
-                                )
-                                .foregroundColor(.black)
-                                .fontWeight(.bold)
-                            }
+                            TextField("Decryption Vigenère Key", text: Binding(
+                                get: { vigenereDecryptionKey ?? "" },
+                                set: { newValue in vigenereDecryptionKey = newValue.isEmpty ? nil : newValue }
+                            ))
+                            .padding(12)
+                            .overlay(RoundedRectangle(cornerRadius: 20).stroke(Color.gray.opacity(0.8), lineWidth: 2))
+                            .foregroundColor(.black)
+                            .fontWeight(.bold)
                             .padding(.horizontal, 25)
                             .padding(.top, 15)
+                        }
+
+                        if selectedDecryption == .columnar {
+                            TextField("Decryption Columnar Key", text: Binding(
+                                get: { columnarDecryptionKey ?? "" },
+                                set: { newValue in columnarDecryptionKey = newValue.isEmpty ? nil : newValue }
+                            ))
+                            .padding(12)
+                            .overlay(RoundedRectangle(cornerRadius: 20).stroke(Color.gray.opacity(0.8), lineWidth: 2))
+                            .foregroundColor(.black)
+                            .fontWeight(.bold)
+                            .padding(.horizontal, 25)
+                            .padding(.top, 15)
+                        }
+
+                        if selectedDecryption == .hill {
+                            VStack(spacing: 5) {
+                                Text("Enter 2x2 Decryption Hill Cipher Key")
+                                    .foregroundColor(.gray)
+                                    .fontWeight(.bold)
+                                    .padding(.top, 10)
+
+                                HStack {
+                                    TextField("a11", text: hillDecBinding(row: 0, col: 0))
+                                        .keyboardType(.numberPad)
+                                        .textFieldStyle(RoundedBorderTextFieldStyle())
+                                        .overlay(RoundedRectangle(cornerRadius: 5).stroke(Color.gray.opacity(0.8), lineWidth: 1))
+
+                                    TextField("a12", text: hillDecBinding(row: 0, col: 1))
+                                        .keyboardType(.numberPad)
+                                        .textFieldStyle(RoundedBorderTextFieldStyle())
+                                        .overlay(RoundedRectangle(cornerRadius: 5).stroke(Color.gray.opacity(0.8), lineWidth: 1))
+                                }
+
+                                HStack {
+                                    TextField("a21", text: hillDecBinding(row: 1, col: 0))
+                                        .keyboardType(.numberPad)
+                                        .textFieldStyle(RoundedBorderTextFieldStyle())
+                                        .overlay(RoundedRectangle(cornerRadius: 5).stroke(Color.gray.opacity(0.8), lineWidth: 1))
+
+                                    TextField("a22", text: hillDecBinding(row: 1, col: 1))
+                                        .keyboardType(.numberPad)
+                                        .textFieldStyle(RoundedBorderTextFieldStyle())
+                                        .overlay(RoundedRectangle(cornerRadius: 5).stroke(Color.gray.opacity(0.8), lineWidth: 1))
+                                }
+                            }
+                            .padding(.horizontal)
                         }
                     }
 
@@ -240,7 +340,11 @@ struct LoginView: View {
                             caesarEncShift: caesarEncryptionShift,
                             caesarDecShift: caesarDecryptionShift,
                             vigenereEncKey: vigenereEncryptionKey,
-                            vigenereDecKey: vigenereDecryptionKey
+                            vigenereDecKey: vigenereDecryptionKey,
+                            columnarEncKey: columnarEncryptionKey,
+                            columnarDecKey: columnarDecryptionKey,
+                            hillEncKey: hillEncryptionKey.map { row in row.map { $0 ?? 1 } },
+                            hillDecKey: hillDecryptionKey.map { row in row.map { $0 ?? 1 } }
                         )
 
                         chatVM = vm
@@ -274,7 +378,6 @@ struct LoginView: View {
                         }
                     }
                 }
-                .padding()
             }
         }
     }

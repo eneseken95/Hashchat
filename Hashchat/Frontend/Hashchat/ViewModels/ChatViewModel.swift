@@ -12,12 +12,22 @@ enum EncryptionType: String, CaseIterable {
     case none = "None"
     case caesar = "Caesar"
     case vigenere = "Vigenere"
+    case rota = "Rota"
+    case columnar = "Columnar"
+    case polybius = "Polybius"
+    case pigpen = "Pigpen"
+    case hill = "Hill"
 }
 
 enum DecryptionType: String, CaseIterable {
     case none = "None"
     case caesar = "Caesar"
     case vigenere = "Vigenere"
+    case rota = "Rota"
+    case columnar = "Columnar"
+    case polybius = "Polybius"
+    case pigpen = "Pigpen"
+    case hill = "Hill"
 }
 
 class ChatViewModel: ObservableObject {
@@ -28,10 +38,24 @@ class ChatViewModel: ObservableObject {
 
     var webSocketService = WebSocketService()
     var username: String
+
     var caesarEncryptionShift: Int = 3
     var caesarDecryptionShift: Int = 3
+
     var vigenereEncryptionKey: String = "hash"
     var vigenereDecryptionKey: String = "hash"
+
+    var columnarEncryptionKey: String = "HASH"
+    var columnarDecryptionKey: String = "HASH"
+
+    var polybiusEncryption: Bool = false
+    var polybiusDecryption: Bool = false
+
+    var pigpenEncryption: Bool = false
+    var pigpenDecryption: Bool = false
+
+    var hillEncryptionKey: [[Int]] = [[3, 3], [2, 5]]
+    var hillDecryptionKey: [[Int]] = [[3, 3], [2, 5]]
 
     init(username: String) {
         self.username = username
@@ -52,6 +76,21 @@ class ChatViewModel: ObservableObject {
             messageToSend = Crypto.caesarEncrypt(messageText, shift: caesarEncryptionShift)
         case .vigenere:
             messageToSend = Crypto.vigenereEncrypt(messageText, key: vigenereEncryptionKey)
+        case .rota:
+            messageToSend = Crypto.rotaEncrypt(messageText)
+        case .columnar:
+            messageToSend = Crypto.columnarEncrypt(messageText, key: columnarEncryptionKey)
+        case .polybius:
+            messageToSend = Crypto.polybiusEncrypt(messageText)
+        case .pigpen:
+            messageToSend = Crypto.pigpenEncrypt(messageText)
+        case .hill:
+            do {
+                messageToSend = try Crypto.hillEncrypt(messageText, key: hillEncryptionKey)
+            } catch {
+                messageToSend = messageText
+            }
+
         case .none:
             break
         }
@@ -78,6 +117,20 @@ class ChatViewModel: ObservableObject {
                         decrypted = Crypto.caesarDecrypt(msg.message, shift: self.caesarDecryptionShift)
                     case .vigenere:
                         decrypted = Crypto.vigenereDecrypt(msg.message, key: self.vigenereDecryptionKey)
+                    case .rota:
+                        decrypted = Crypto.rotaDecrypt(msg.message)
+                    case .columnar:
+                        decrypted = Crypto.columnarDecrypt(msg.message, key: columnarDecryptionKey)
+                    case .polybius:
+                        decrypted = Crypto.polybiusDecrypt(msg.message)
+                    case .pigpen:
+                        decrypted = Crypto.pigpenDecrypt(msg.message)
+                    case .hill:
+                        do {
+                            decrypted = try Crypto.hillDecrypt(msg.message, key: hillDecryptionKey)
+                        } catch {
+                            decrypted = msg.message
+                        }
                     case .none:
                         break
                     }
