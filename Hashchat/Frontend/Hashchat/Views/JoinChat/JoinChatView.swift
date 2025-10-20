@@ -1,5 +1,5 @@
 //
-//  LoginView.swift
+//  JoinChatView.swift
 //  Hashchat
 //
 //  Created by Enes Eken 2 on 12.10.2025.
@@ -7,8 +7,9 @@
 
 import SwiftUI
 
-struct LoginView: View {
-    @StateObject private var viewModel = LoginViewModel()
+struct JoinChatView: View {
+    @EnvironmentObject var joinChatViewModel: JoinChatViewModel
+    @EnvironmentObject var webSocketService: WebSocketService
     @State private var navigate = false
     @State private var chatVM: ChatViewModel? = nil
     @State private var selectedEncryption: EncryptionType = .none
@@ -26,7 +27,7 @@ struct LoginView: View {
     @Namespace private var animationNamespace
 
     private var isLoginDisabled: Bool {
-        let trimmedUsername = viewModel.username.trimmingCharacters(in: .whitespaces)
+        let trimmedUsername = joinChatViewModel.username.trimmingCharacters(in: .whitespaces)
         if trimmedUsername.isEmpty { return true }
 
         switch selectedEncryption {
@@ -102,7 +103,7 @@ struct LoginView: View {
                             )
                     }
 
-                    TextField("User name", text: $viewModel.username)
+                    TextField("User name", text: $joinChatViewModel.username)
                         .padding(12)
                         .overlay(
                             RoundedRectangle(cornerRadius: 20)
@@ -195,24 +196,24 @@ struct LoginView: View {
                                     .padding(.top, 10)
 
                                 HStack {
-                                    TextField("a11", text: hillEncBinding(row: 0, col: 0))
+                                    TextField("", text: hillEncBinding(row: 0, col: 0))
                                         .keyboardType(.numberPad)
                                         .textFieldStyle(RoundedBorderTextFieldStyle())
                                         .overlay(RoundedRectangle(cornerRadius: 5).stroke(Color.gray.opacity(0.8), lineWidth: 1))
 
-                                    TextField("a12", text: hillEncBinding(row: 0, col: 1))
+                                    TextField("", text: hillEncBinding(row: 0, col: 1))
                                         .keyboardType(.numberPad)
                                         .textFieldStyle(RoundedBorderTextFieldStyle())
                                         .overlay(RoundedRectangle(cornerRadius: 5).stroke(Color.gray.opacity(0.8), lineWidth: 1))
                                 }
 
                                 HStack {
-                                    TextField("a21", text: hillEncBinding(row: 1, col: 0))
+                                    TextField("", text: hillEncBinding(row: 1, col: 0))
                                         .keyboardType(.numberPad)
                                         .textFieldStyle(RoundedBorderTextFieldStyle())
                                         .overlay(RoundedRectangle(cornerRadius: 5).stroke(Color.gray.opacity(0.8), lineWidth: 1))
 
-                                    TextField("a22", text: hillEncBinding(row: 1, col: 1))
+                                    TextField("", text: hillEncBinding(row: 1, col: 1))
                                         .keyboardType(.numberPad)
                                         .textFieldStyle(RoundedBorderTextFieldStyle())
                                         .overlay(RoundedRectangle(cornerRadius: 5).stroke(Color.gray.opacity(0.8), lineWidth: 1))
@@ -304,24 +305,24 @@ struct LoginView: View {
                                     .padding(.top, 10)
 
                                 HStack {
-                                    TextField("a11", text: hillDecBinding(row: 0, col: 0))
+                                    TextField("", text: hillDecBinding(row: 0, col: 0))
                                         .keyboardType(.numberPad)
                                         .textFieldStyle(RoundedBorderTextFieldStyle())
                                         .overlay(RoundedRectangle(cornerRadius: 5).stroke(Color.gray.opacity(0.8), lineWidth: 1))
 
-                                    TextField("a12", text: hillDecBinding(row: 0, col: 1))
+                                    TextField("", text: hillDecBinding(row: 0, col: 1))
                                         .keyboardType(.numberPad)
                                         .textFieldStyle(RoundedBorderTextFieldStyle())
                                         .overlay(RoundedRectangle(cornerRadius: 5).stroke(Color.gray.opacity(0.8), lineWidth: 1))
                                 }
 
                                 HStack {
-                                    TextField("a21", text: hillDecBinding(row: 1, col: 0))
+                                    TextField("", text: hillDecBinding(row: 1, col: 0))
                                         .keyboardType(.numberPad)
                                         .textFieldStyle(RoundedBorderTextFieldStyle())
                                         .overlay(RoundedRectangle(cornerRadius: 5).stroke(Color.gray.opacity(0.8), lineWidth: 1))
 
-                                    TextField("a22", text: hillDecBinding(row: 1, col: 1))
+                                    TextField("", text: hillDecBinding(row: 1, col: 1))
                                         .keyboardType(.numberPad)
                                         .textFieldStyle(RoundedBorderTextFieldStyle())
                                         .overlay(RoundedRectangle(cornerRadius: 5).stroke(Color.gray.opacity(0.8), lineWidth: 1))
@@ -332,25 +333,21 @@ struct LoginView: View {
                     }
 
                     Button(action: {
-                        guard !viewModel.username.trimmingCharacters(in: .whitespaces).isEmpty else { return }
+                        guard !joinChatViewModel.username.trimmingCharacters(in: .whitespaces).isEmpty else { return }
 
-                        let vm = viewModel.createChatVM(
-                            encryption: selectedEncryption,
-                            decryption: selectedDecryption,
-                            caesarEncShift: caesarEncryptionShift,
-                            caesarDecShift: caesarDecryptionShift,
-                            vigenereEncKey: vigenereEncryptionKey,
-                            vigenereDecKey: vigenereDecryptionKey,
-                            columnarEncKey: columnarEncryptionKey,
-                            columnarDecKey: columnarDecryptionKey,
-                            hillEncKey: hillEncryptionKey.map { row in row.map { $0 ?? 1 } },
-                            hillDecKey: hillDecryptionKey.map { row in row.map { $0 ?? 1 } }
+                        let vm = joinChatViewModel.createChatVM(
+                            selectedCipher: selectedEncryption,
+                            caesarShift: caesarEncryptionShift,
+                            vigenereKey: vigenereEncryptionKey,
+                            columnarKey: columnarEncryptionKey,
+                            hillKey: hillEncryptionKey.map { row in row.map { $0 ?? 1 } },
+                            webSocketService: webSocketService
                         )
 
                         chatVM = vm
                         navigate = true
                     }) {
-                        Text("Login")
+                        Text("Join Chat")
                             .font(.headline)
                             .fontWeight(.bold)
                             .foregroundColor(.white)
@@ -371,8 +368,9 @@ struct LoginView: View {
                     .disabled(isLoginDisabled)
                     .opacity(isLoginDisabled ? 0.5 : 1.0)
                     .navigationDestination(isPresented: $navigate) {
-                        if let chatVM {
-                            ChatView(viewModel: chatVM)
+                        if let vm = chatVM {
+                            ChatView()
+                                .environmentObject(vm)
                         } else {
                             EmptyView()
                         }
@@ -384,5 +382,6 @@ struct LoginView: View {
 }
 
 #Preview {
-    LoginView()
+    JoinChatView()
+        .environmentObject(JoinChatViewModel())
 }

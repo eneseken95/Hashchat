@@ -33,32 +33,19 @@ enum DecryptionType: String, CaseIterable {
 class ChatViewModel: ObservableObject {
     @Published var messageText: String = ""
     @Published var messages: [Message] = []
-    @Published var selectedEncryption: EncryptionType = .none
-    @Published var selectedDecryption: DecryptionType = .none
+    @Published var selectedCipher: EncryptionType = .none
 
-    var webSocketService = WebSocketService()
+    var webSocketService: WebSocketService
     var username: String
 
-    var caesarEncryptionShift: Int = 3
-    var caesarDecryptionShift: Int = 3
+    var caesarShift: Int = 3
+    var vigenereKey: String = "hash"
+    var columnarKey: String = "HASH"
+    var hillKey: [[Int]] = [[3, 3], [2, 5]]
 
-    var vigenereEncryptionKey: String = "hash"
-    var vigenereDecryptionKey: String = "hash"
-
-    var columnarEncryptionKey: String = "HASH"
-    var columnarDecryptionKey: String = "HASH"
-
-    var polybiusEncryption: Bool = false
-    var polybiusDecryption: Bool = false
-
-    var pigpenEncryption: Bool = false
-    var pigpenDecryption: Bool = false
-
-    var hillEncryptionKey: [[Int]] = [[3, 3], [2, 5]]
-    var hillDecryptionKey: [[Int]] = [[3, 3], [2, 5]]
-
-    init(username: String) {
+    init(username: String, webSocketService: WebSocketService) {
         self.username = username
+        self.webSocketService = webSocketService
         bindMessages()
     }
 
@@ -69,38 +56,20 @@ class ChatViewModel: ObservableObject {
     func sendMessage() {
         guard !messageText.isEmpty else { return }
 
-        var messageToSend = messageText
-
-        switch selectedEncryption {
-        case .caesar:
-            messageToSend = Crypto.caesarEncrypt(messageText, shift: caesarEncryptionShift)
-        case .vigenere:
-            messageToSend = Crypto.vigenereEncrypt(messageText, key: vigenereEncryptionKey)
-        case .rota:
-            messageToSend = Crypto.rotaEncrypt(messageText)
-        case .columnar:
-            messageToSend = Crypto.columnarEncrypt(messageText, key: columnarEncryptionKey)
-        case .polybius:
-            messageToSend = Crypto.polybiusEncrypt(messageText)
-        case .pigpen:
-            messageToSend = Crypto.pigpenEncrypt(messageText)
-        case .hill:
-            do {
-                messageToSend = try Crypto.hillEncrypt(messageText, key: hillEncryptionKey)
-            } catch {
-                messageToSend = messageText
-            }
-
-        case .none:
-            break
-        }
+        let cipher = makeCipher(for: selectedCipher)
+        let messageToSend = cipher.encrypt(messageText)
 
         webSocketService.send(message: messageToSend)
 
-        let newMsg = Message(sender: username, message: messageText)
+        let newMsg = Message(sender: username, message: messageText, timestamp: Date())
         messages.append(newMsg)
 
         messageText = ""
+    }
+
+    private func decryptMessage(_ text: String) -> String {
+        let cipher = makeCipher(for: selectedCipher)
+        return cipher.decrypt(text)
     }
 
     private func bindMessages() {
@@ -110,35 +79,24 @@ class ChatViewModel: ObservableObject {
                 guard let self = self else { return }
 
                 if msg.sender != self.username {
-                    var decrypted = msg.message
-
-                    switch self.selectedDecryption {
-                    case .caesar:
-                        decrypted = Crypto.caesarDecrypt(msg.message, shift: self.caesarDecryptionShift)
-                    case .vigenere:
-                        decrypted = Crypto.vigenereDecrypt(msg.message, key: self.vigenereDecryptionKey)
-                    case .rota:
-                        decrypted = Crypto.rotaDecrypt(msg.message)
-                    case .columnar:
-                        decrypted = Crypto.columnarDecrypt(msg.message, key: columnarDecryptionKey)
-                    case .polybius:
-                        decrypted = Crypto.polybiusDecrypt(msg.message)
-                    case .pigpen:
-                        decrypted = Crypto.pigpenDecrypt(msg.message)
-                    case .hill:
-                        do {
-                            decrypted = try Crypto.hillDecrypt(msg.message, key: hillDecryptionKey)
-                        } catch {
-                            decrypted = msg.message
-                        }
-                    case .none:
-                        break
-                    }
-
-                    let finalMsg = Message(sender: msg.sender, message: decrypted)
+                    let decrypted = self.decryptMessage(msg.message)
+                    let finalMsg = Message(sender: msg.sender, message: decrypted, timestamp: Date())
                     self.messages.append(finalMsg)
                 }
             }
             .store(in: &webSocketService.cancellables)
+    }
+
+    private func makeCipher(for type: EncryptionType) -> CipherProtocol {
+        switch type {
+        case .none: return PlainCipher()
+        case .caesar: return CaesarCipher(shift: caesarShift)
+        case .vigenere: return VigenereCipher(key: vigenereKey)
+        case .rota: return RotaCipher()
+        case .columnar: return ColumnarCipher(key: columnarKey)
+        case .polybius: return PolybiusCipher()
+        case .pigpen: return PigpenCipher()
+        case .hill: return HillCipher(key: hillKey)
+        }
     }
 }

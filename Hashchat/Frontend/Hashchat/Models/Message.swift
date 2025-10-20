@@ -11,6 +11,7 @@ struct Message: Codable, Identifiable, Equatable {
     var id = UUID()
     var sender: String
     var message: String
+    let timestamp: Date
 
     static func == (lhs: Message, rhs: Message) -> Bool {
         lhs.id == rhs.id

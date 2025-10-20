@@ -8,13 +8,13 @@
 import SwiftUI
 
 struct WebSocketLogView: View {
-    @ObservedObject var wsService: WebSocketService
+    @EnvironmentObject var webSocketService: WebSocketService
 
     var body: some View {
         ScrollViewReader { proxy in
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 4) {
-                    ForEach(Array(wsService.logs.enumerated()), id: \.offset) { index, log in
+                    ForEach(Array(webSocketService.logs.enumerated()), id: \.offset) { index, log in
                         HStack(alignment: .top, spacing: 8) {
                             Text("\(index + 1) ")
                                 .font(.system(.subheadline, design: .monospaced))
@@ -33,8 +33,8 @@ struct WebSocketLogView: View {
                 }
                 .padding()
             }
-            .onChange(of: wsService.logs.count) {
-                if let lastIndex = wsService.logs.indices.last {
+            .onChange(of: webSocketService.logs.count) {
+                if let lastIndex = webSocketService.logs.indices.last {
                     proxy.scrollTo(lastIndex, anchor: .bottom)
                 }
             }
@@ -52,6 +52,7 @@ struct WebSocketLogView: View {
         "Connection closed unexpectedly",
     ]
 
-    return WebSocketLogView(wsService: mockWS)
+    return WebSocketLogView()
         .frame(width: 350, height: 300)
+        .environmentObject(WebSocketService())
 }

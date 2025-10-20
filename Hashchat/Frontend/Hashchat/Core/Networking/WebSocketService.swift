@@ -13,8 +13,11 @@ final class WebSocketService: ObservableObject {
     var cancellables = Set<AnyCancellable>()
     private var pingTimer: Timer?
     private var webSocketTask: URLSessionWebSocketTask?
-    private lazy var url = URL(string: "ws://localhost:8000/ws")
+    private lazy var url = URL(string: "ws://localhost:12345/ws")
     private var username: String = ""
+    private var isConnecting = false
+    private var reconnectAttempts = 0
+    private let maxReconnectInterval: TimeInterval = 30
     let newMessage = PassthroughSubject<Message, Never>()
 
     func appendLog(_ text: String) {
@@ -25,25 +28,33 @@ final class WebSocketService: ObservableObject {
     }
 
     func connect(username: String) {
-        guard webSocketTask == nil else {
-            appendLog("WebSocket already connected for \(username)")
+        guard webSocketTask == nil && !isConnecting else {
+            appendLog("WebSocket already connected or connecting for \(username)")
             return
         }
 
         self.username = username
+        isConnecting = true
         let session = URLSession(configuration: .default)
 
         guard let url = url else {
             appendLog("WebSocket URL is invalid or nil")
+            isConnecting = false
             return
         }
 
         webSocketTask = session.webSocketTask(with: url)
         webSocketTask?.resume()
+        appendLog("WebSocket connecting for \(username)")
 
-        appendLog("WebSocket connected for \(username)")
-        listen()
-        startPinging()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
+            guard let self = self else { return }
+            self.appendLog("WebSocket connected for \(username)")
+            self.isConnecting = false
+            self.reconnectAttempts = 0
+            self.listen()
+            self.startPinging()
+        }
     }
 
     private func handleIncoming(text: String) {
@@ -61,20 +72,22 @@ final class WebSocketService: ObservableObject {
 
     private func listen() {
         webSocketTask?.receive { [weak self] result in
+            guard let self = self else { return }
             switch result {
             case let .success(message):
                 if case let .string(text) = message {
-                    self?.handleIncoming(text: text)
+                    self.handleIncoming(text: text)
                 }
-                self?.listen()
+                self.listen()
             case let .failure(error):
-                self?.appendLog("Receive error: \(error.localizedDescription)")
+                self.appendLog("Receive error: \(error.localizedDescription)")
+                self.cleanupAndReconnect()
             }
         }
     }
 
     func send(message: String) {
-        let msg = Message(sender: username, message: message)
+        let msg = Message(sender: username, message: message, timestamp: Date())
 
         guard let data = try? JSONEncoder().encode(msg),
               let jsonString = String(data: data, encoding: .utf8) else {
@@ -85,6 +98,7 @@ final class WebSocketService: ObservableObject {
         webSocketTask?.send(.string(jsonString)) { [weak self] error in
             if let error = error {
                 self?.appendLog("Send error: \(error.localizedDescription)")
+                self?.cleanupAndReconnect()
             } else {
                 self?.appendLog("Sent JSON: \(jsonString)")
             }
@@ -99,12 +113,14 @@ final class WebSocketService: ObservableObject {
     }
 
     private func startPinging() {
-        pingTimer = Timer.scheduledTimer(withTimeInterval: 15, repeats: true) { [weak self] _ in
-            self?.webSocketTask?.sendPing { error in
+        pingTimer = Timer.scheduledTimer(withTimeInterval: 45, repeats: true) { [weak self] _ in
+            guard let self = self else { return }
+            self.webSocketTask?.sendPing { error in
                 if let error = error {
-                    self?.appendLog("Ping failed: \(error.localizedDescription)")
+                    self.appendLog("Ping failed: \(error.localizedDescription)")
+                    self.cleanupAndReconnect()
                 } else {
-                    self?.appendLog("Ping sent successfully")
+                    self.appendLog("Ping sent successfully")
                 }
             }
         }
@@ -113,5 +129,20 @@ final class WebSocketService: ObservableObject {
     private func stopPinging() {
         pingTimer?.invalidate()
         pingTimer = nil
+    }
+
+    private func cleanupAndReconnect() {
+        stopPinging()
+        webSocketTask = nil
+        guard !isConnecting else { return }
+
+        reconnectAttempts += 1
+        let interval = min(pow(2.0, Double(reconnectAttempts)), maxReconnectInterval)
+        appendLog("Attempting to reconnect in \(Int(interval))s...")
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + interval) { [weak self] in
+            guard let self = self, !self.isConnecting else { return }
+            self.connect(username: self.username)
+        }
     }
 }
