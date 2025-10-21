@@ -26,7 +26,7 @@ struct MessageBubble: View {
                         .fixedSize(horizontal: false, vertical: true)
 
                     Text(message.message)
-                        .font(.headline)
+                        .font(.footnote)
                         .foregroundColor(.white)
                         .fontWeight(.semibold)
                         .multilineTextAlignment(.trailing)
@@ -39,7 +39,7 @@ struct MessageBubble: View {
                     BubbleShape(isCurrentUser: true)
                         .fill(Color(red: 11 / 255, green: 185 / 255, blue: 255 / 255))
                 )
-                .frame(maxWidth: UIScreen.main.bounds.width * 0.50, alignment: .trailing)
+                .frame(maxWidth: UIScreen.main.bounds.width * 0.70, alignment: .trailing)
                 .fixedSize(horizontal: false, vertical: true)
 
                 Circle()
@@ -69,7 +69,7 @@ struct MessageBubble: View {
                         .fixedSize(horizontal: false, vertical: true)
 
                     Text(message.message)
-                        .font(.headline)
+                        .font(.footnote)
                         .foregroundColor(.white)
                         .fontWeight(.semibold)
                         .multilineTextAlignment(.leading)
@@ -82,7 +82,7 @@ struct MessageBubble: View {
                     BubbleShape(isCurrentUser: false)
                         .fill(Color.gray)
                 )
-                .frame(maxWidth: UIScreen.main.bounds.width * 0.50, alignment: .leading)
+                .frame(maxWidth: UIScreen.main.bounds.width * 0.70, alignment: .leading)
                 .fixedSize(horizontal: false, vertical: true)
 
                 Spacer()

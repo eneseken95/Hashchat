@@ -10,67 +10,49 @@ import SwiftUI
 struct ConnectedUsersView: View {
     let users: [String]
     let isUserActive: (String) -> Bool
-    @Environment(\.dismiss) var dismiss
     let userColors: [String: Color]
+    @Environment(\.dismiss) var dismiss
 
     var body: some View {
-        NavigationStack {
-            VStack(spacing: 0) {
-                ZStack {
-                    Text("Connected Users")
-                        .font(.title2)
-                        .foregroundColor(.black)
-                        .fontWeight(.bold)
+        VStack(spacing: 0) {
+            SheetHeaderView(title: "Connected Users") {
+                dismiss()
+            }
 
-                    HStack {
-                        Spacer()
-                        Button(action: { dismiss() }) {
-                            Image(systemName: "xmark")
-                                .resizable()
-                                .frame(width: 20, height: 20)
-                                .foregroundColor(Color(red: 11 / 255, green: 185 / 255, blue: 255 / 255))
+            ScrollView {
+                LazyVStack(spacing: 4) {
+                    ForEach(users, id: \.self) { user in
+                        HStack(spacing: 12) {
+                            Circle()
+                                .fill(userColors[user] ?? .gray)
+                                .frame(width: 45, height: 45)
+                                .overlay(
+                                    Text(String(user.prefix(1)).uppercased())
+                                        .font(.title3)
+                                        .foregroundColor(.white)
+                                        .fontWeight(.bold)
+                                )
+
+                            Text(user)
+                                .font(.headline)
+                                .foregroundColor(.black)
+                                .fontWeight(.bold)
+                            Spacer()
+                            Text(isUserActive(user) ? "Active" : "Offline")
+                                .font(.headline)
+                                .foregroundColor(isUserActive(user) ? .green : .gray)
                                 .fontWeight(.bold)
                         }
+                        .padding(.vertical, 4)
+
+                        Divider()
+                            .frame(height: 0.8)
+                            .background(Color.gray)
                     }
                 }
-                .padding()
-                .background(Color.white)
-
-                ScrollView {
-                    LazyVStack(spacing: 4) {
-                        ForEach(users, id: \.self) { user in
-                            HStack(spacing: 12) {
-                                Circle()
-                                    .fill(userColors[user] ?? .gray)
-                                    .frame(width: 45, height: 45)
-                                    .overlay(
-                                        Text(String(user.prefix(1)).uppercased())
-                                            .font(.title3)
-                                            .foregroundStyle(Color.white)
-                                            .fontWeight(.bold)
-                                    )
-
-                                Text(user)
-                                    .font(.headline)
-                                    .foregroundStyle(Color.black)
-                                    .fontWeight(.bold)
-                                Spacer()
-                                Text(isUserActive(user) ? "Active" : "Offline")
-                                    .font(.headline)
-                                    .foregroundColor(isUserActive(user) ? .green : .gray)
-                                    .fontWeight(.bold)
-                            }
-                            .padding(.vertical, 4)
-
-                            Divider()
-                                .frame(height: 0.8)
-                                .background(Color.gray)
-                        }
-                    }
-                    .padding(.horizontal)
-                }
-                .padding(.top, 10)
+                .padding(.horizontal)
             }
+            .padding(.top, 10)
             .background(Color(red: 238 / 255, green: 239 / 255, blue: 238 / 255))
         }
     }

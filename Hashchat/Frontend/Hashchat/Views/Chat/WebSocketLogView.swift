@@ -9,37 +9,44 @@ import SwiftUI
 
 struct WebSocketLogView: View {
     @EnvironmentObject var webSocketService: WebSocketService
+    @Environment(\.dismiss) var dismiss
 
     var body: some View {
-        ScrollViewReader { proxy in
-            ScrollView {
-                LazyVStack(alignment: .leading, spacing: 4) {
-                    ForEach(Array(webSocketService.logs.enumerated()), id: \.offset) { index, log in
-                        HStack(alignment: .top, spacing: 8) {
-                            Text("\(index + 1) ")
-                                .font(.system(.subheadline, design: .monospaced))
-                                .foregroundColor(.white)
-                                .fontWeight(.bold)
-                                .frame(width: 25, alignment: .trailing)
+        VStack(spacing: 0) {
+            SheetHeaderView(title: "WebSocket Logs") {
+                dismiss()
+            }
 
-                            Text(log)
-                                .font(.system(.subheadline, design: .monospaced))
-                                .foregroundColor(.green)
-                                .fontWeight(.bold)
-                                .multilineTextAlignment(.leading)
+            ScrollViewReader { proxy in
+                ScrollView {
+                    LazyVStack(alignment: .leading, spacing: 4) {
+                        ForEach(Array(webSocketService.logs.enumerated()), id: \.offset) { index, log in
+                            HStack(alignment: .top, spacing: 8) {
+                                Text("\(index + 1) ")
+                                    .font(.system(.subheadline, design: .monospaced))
+                                    .foregroundColor(.white)
+                                    .fontWeight(.bold)
+                                    .frame(width: 25, alignment: .trailing)
+
+                                Text(log)
+                                    .font(.system(.subheadline, design: .monospaced))
+                                    .foregroundColor(.green)
+                                    .fontWeight(.bold)
+                                    .multilineTextAlignment(.leading)
+                            }
+                            .id(index)
                         }
-                        .id(index)
+                    }
+                    .padding()
+                }
+                .onChange(of: webSocketService.logs.count) {
+                    if let lastIndex = webSocketService.logs.indices.last {
+                        proxy.scrollTo(lastIndex, anchor: .bottom)
                     }
                 }
-                .padding()
             }
-            .onChange(of: webSocketService.logs.count) {
-                if let lastIndex = webSocketService.logs.indices.last {
-                    proxy.scrollTo(lastIndex, anchor: .bottom)
-                }
-            }
+            .background(Color.black.opacity(0.9))
         }
-        .background(Color.black.opacity(0.9))
     }
 }
 
