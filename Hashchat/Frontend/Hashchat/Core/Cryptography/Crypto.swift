@@ -289,4 +289,103 @@ final class Crypto {
 
         return plain
     }
+
+    // MARK: rail fence
+
+    static func railFenceEncrypt(_ text: String, rails: Int) -> String {
+        guard rails >= 2 else { return text }
+
+        var fence = Array(repeating: [Character](), count: rails)
+        var rail = 0
+        var direction = 1
+
+        for char in text {
+            fence[rail].append(char)
+            rail += direction
+            if rail == 0 || rail == rails - 1 {
+                direction *= -1
+            }
+        }
+
+        return fence.flatMap { $0 }.map(String.init).joined()
+    }
+
+    static func railFenceDecrypt(_ text: String, rails: Int) -> String {
+        guard rails >= 2 else { return text }
+
+        let length = text.count
+        var pattern = Array(repeating: 0, count: length)
+        var rail = 0
+        var direction = 1
+
+        for i in 0 ..< length {
+            pattern[i] = rail
+            rail += direction
+            if rail == 0 || rail == rails - 1 {
+                direction *= -1
+            }
+        }
+
+        var fence = Array(repeating: [Character](), count: rails)
+        var index = text.startIndex
+
+        for r in 0 ..< rails {
+            for i in 0 ..< length where pattern[i] == r {
+                fence[r].append(text[index])
+                index = text.index(after: index)
+            }
+        }
+
+        var result = ""
+        var railIndices = Array(repeating: 0, count: rails)
+        for r in pattern {
+            result.append(fence[r][railIndices[r]])
+            railIndices[r] += 1
+        }
+
+        return result
+    }
+
+    // MARK: euclid cipher
+
+    static func euclidEncrypt(_ text: String, key: Int) -> String {
+        let mod = 26
+        var result = ""
+        for char in text.uppercased() {
+            guard let ascii = char.asciiValue, char.isLetter else {
+                result.append(char)
+                continue
+            }
+            let a = Int(ascii - 65)
+            let encrypted = (a * key) % mod
+            result.append(Character(UnicodeScalar(encrypted + 65)!))
+        }
+        return result
+    }
+
+    static func euclidDecrypt(_ text: String, key: Int) -> String {
+        let mod = 26
+        guard let inverse = multiplicativeInverse(key, mod: mod) else { return text }
+
+        var result = ""
+        for char in text.uppercased() {
+            guard let ascii = char.asciiValue, char.isLetter else {
+                result.append(char)
+                continue
+            }
+            let a = Int(ascii - 65)
+            let decrypted = ((a * inverse) % mod + mod) % mod
+            result.append(Character(UnicodeScalar(decrypted + 65)!))
+        }
+        return result
+    }
+
+    private static func multiplicativeInverse(_ a: Int, mod: Int) -> Int? {
+        for i in 1 ..< mod {
+            if (a * i) % mod == 1 {
+                return i
+            }
+        }
+        return nil
+    }
 }

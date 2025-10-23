@@ -55,4 +55,45 @@ extension JoinChatView {
         }
         .padding(.horizontal)
     }
+
+    func isCipherInputValid() -> Bool {
+        let trimmed = joinChatViewModel.username.trimmingCharacters(in: .whitespaces)
+        guard !trimmed.isEmpty else { return false }
+
+        switch selectedEncryption {
+        case .caesar: if caesarEncryptionShift == nil { return false }
+        case .vigenere: if vigenereEncryptionKey?.isEmpty ?? true { return false }
+        case .columnar: if columnarEncryptionKey?.isEmpty ?? true { return false }
+        case .hill: if hillEncryptionKey.flatMap({ $0 }).contains(nil) { return false }
+        case .railfence: if railFenceEncryptionRails == nil { return false }
+        case .euclid: if euclidEncryptionKey == nil { return false }
+        default: break
+        }
+
+        switch selectedDecryption {
+        case .caesar: if caesarDecryptionShift == nil { return false }
+        case .vigenere: if vigenereDecryptionKey?.isEmpty ?? true { return false }
+        case .columnar: if columnarDecryptionKey?.isEmpty ?? true { return false }
+        case .hill: if hillDecryptionKey.flatMap({ $0 }).contains(nil) { return false }
+        case .railfence: if railFenceDecryptionRails == nil { return false }
+        case .euclid: if euclidDecryptionKey == nil { return false }
+        default: break
+        }
+
+        return true
+    }
+
+    func hillEncBinding(row: Int, col: Int) -> Binding<String> {
+        Binding<String>(
+            get: { hillEncryptionKey[row][col].map { String($0) } ?? "" },
+            set: { hillEncryptionKey[row][col] = Int($0) }
+        )
+    }
+
+    func hillDecBinding(row: Int, col: Int) -> Binding<String> {
+        Binding<String>(
+            get: { hillDecryptionKey[row][col].map { String($0) } ?? "" },
+            set: { hillDecryptionKey[row][col] = Int($0) }
+        )
+    }
 }

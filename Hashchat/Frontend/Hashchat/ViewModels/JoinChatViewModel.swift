@@ -16,6 +16,8 @@ class JoinChatViewModel: ObservableObject {
         vigenereKey: String? = nil,
         columnarKey: String? = nil,
         hillKey: [[Int]]? = nil,
+        railFenceRails: Int? = nil,
+        euclidKey: Int? = nil,
         webSocketService: WebSocketService
     ) -> ChatViewModel {
         let trimmed = username.trimmingCharacters(in: .whitespaces)
@@ -34,6 +36,12 @@ class JoinChatViewModel: ObservableObject {
         }
         if let hKey = hillKey {
             vm.hillKey = hKey
+        }
+        if let rails = railFenceRails {
+            vm.railFenceRails = rails
+        }
+        if let eKey = euclidKey {
+            vm.euclidKey = eKey
         }
 
         vm.connect()

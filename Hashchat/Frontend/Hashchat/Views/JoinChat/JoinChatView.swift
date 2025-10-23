@@ -13,55 +13,26 @@ struct JoinChatView: View {
 
     @State private var navigate = false
     @State private var chatVM: ChatViewModel? = nil
-    @State private var selectedEncryption: EncryptionType = .none
-    @State private var selectedDecryption: DecryptionType = .none
+    @State var selectedEncryption: EncryptionType = .none
+    @State var selectedDecryption: DecryptionType = .none
 
-    @State private var caesarEncryptionShift: Int? = nil
-    @State private var caesarDecryptionShift: Int? = nil
-    @State private var vigenereEncryptionKey: String? = nil
-    @State private var vigenereDecryptionKey: String? = nil
-    @State private var columnarEncryptionKey: String? = nil
-    @State private var columnarDecryptionKey: String? = nil
-    @State private var hillEncryptionKey: [[Int?]] = [[nil, nil], [nil, nil]]
-    @State private var hillDecryptionKey: [[Int?]] = [[nil, nil], [nil, nil]]
+    @State var caesarEncryptionShift: Int? = nil
+    @State var caesarDecryptionShift: Int? = nil
+    @State var vigenereEncryptionKey: String? = nil
+    @State var vigenereDecryptionKey: String? = nil
+    @State var columnarEncryptionKey: String? = nil
+    @State var columnarDecryptionKey: String? = nil
+    @State var hillEncryptionKey: [[Int?]] = [[nil, nil], [nil, nil]]
+    @State var hillDecryptionKey: [[Int?]] = [[nil, nil], [nil, nil]]
+    @State var railFenceEncryptionRails: Int? = nil
+    @State var railFenceDecryptionRails: Int? = nil
+    @State var euclidEncryptionKey: Int? = nil
+    @State var euclidDecryptionKey: Int? = nil
 
     @Namespace private var animationNamespace
 
     private var isLoginDisabled: Bool {
-        let trimmed = joinChatViewModel.username.trimmingCharacters(in: .whitespaces)
-        guard !trimmed.isEmpty else { return true }
-
-        switch selectedEncryption {
-        case .caesar: if caesarEncryptionShift == nil { return true }
-        case .vigenere: if vigenereEncryptionKey?.isEmpty ?? true { return true }
-        case .columnar: if columnarEncryptionKey?.isEmpty ?? true { return true }
-        case .hill: if hillEncryptionKey.flatMap({ $0 }).contains(nil) { return true }
-        default: break
-        }
-
-        switch selectedDecryption {
-        case .caesar: if caesarDecryptionShift == nil { return true }
-        case .vigenere: if vigenereDecryptionKey?.isEmpty ?? true { return true }
-        case .columnar: if columnarDecryptionKey?.isEmpty ?? true { return true }
-        case .hill: if hillDecryptionKey.flatMap({ $0 }).contains(nil) { return true }
-        default: break
-        }
-
-        return false
-    }
-
-    private func hillEncBinding(row: Int, col: Int) -> Binding<String> {
-        Binding<String>(
-            get: { hillEncryptionKey[row][col].map { String($0) } ?? "" },
-            set: { hillEncryptionKey[row][col] = Int($0) }
-        )
-    }
-
-    private func hillDecBinding(row: Int, col: Int) -> Binding<String> {
-        Binding<String>(
-            get: { hillDecryptionKey[row][col].map { String($0) } ?? "" },
-            set: { hillDecryptionKey[row][col] = Int($0) }
-        )
+        !isCipherInputValid()
     }
 
     var body: some View {
@@ -71,7 +42,6 @@ struct JoinChatView: View {
 
                 VStack(spacing: 20) {
                     HeaderView()
-
                     UsernameFieldView(username: $joinChatViewModel.username)
 
                     CipherSelectionView(
@@ -81,6 +51,8 @@ struct JoinChatView: View {
                         shift: $caesarEncryptionShift,
                         key: $vigenereEncryptionKey,
                         columnar: $columnarEncryptionKey,
+                        railFenceRails: $railFenceEncryptionRails,
+                        euclidKey: $euclidEncryptionKey,
                         hill: hillEncryptionKey,
                         encryption: true,
                         animationNamespace: animationNamespace,
@@ -94,6 +66,8 @@ struct JoinChatView: View {
                         shift: $caesarDecryptionShift,
                         key: $vigenereDecryptionKey,
                         columnar: $columnarDecryptionKey,
+                        railFenceRails: $railFenceDecryptionRails,
+                        euclidKey: $euclidDecryptionKey,
                         hill: hillDecryptionKey,
                         encryption: false,
                         animationNamespace: animationNamespace,
@@ -110,6 +84,8 @@ struct JoinChatView: View {
                             vigenereKey: vigenereEncryptionKey,
                             columnarKey: columnarEncryptionKey,
                             hillKey: hillEncryptionKey.map { $0.map { $0 ?? 1 } },
+                            railFenceRails: railFenceEncryptionRails,
+                            euclidKey: euclidEncryptionKey,
                             webSocketService: webSocketService
                         )
                         chatVM = vm
