@@ -28,6 +28,9 @@ struct MessagesView: View {
                 }
                 .padding()
             }
+            .onTapGesture {
+                hideKeyboard()
+            }
             .onChange(of: messages.count) { _, _ in
                 let allUsers = Array(Set(messages.map { $0.sender }))
                 userColors = generateColors(allUsers)

@@ -39,65 +39,71 @@ struct JoinChatView: View {
         NavigationStack {
             ZStack {
                 Color.white.ignoresSafeArea()
+                ScrollView {
+                    VStack(spacing: 20) {
+                        HeaderView()
+                        UsernameFieldView(username: $joinChatViewModel.username)
 
-                VStack(spacing: 20) {
-                    HeaderView()
-                    UsernameFieldView(username: $joinChatViewModel.username)
-
-                    CipherSelectionView(
-                        title: "Encryption",
-                        types: EncryptionType.allCases,
-                        selected: $selectedEncryption,
-                        shift: $caesarEncryptionShift,
-                        key: $vigenereEncryptionKey,
-                        columnar: $columnarEncryptionKey,
-                        railFenceRails: $railFenceEncryptionRails,
-                        euclidKey: $euclidEncryptionKey,
-                        hill: hillEncryptionKey,
-                        encryption: true,
-                        animationNamespace: animationNamespace,
-                        hillBinding: hillEncBinding
-                    )
-
-                    CipherSelectionView(
-                        title: "Decryption",
-                        types: DecryptionType.allCases,
-                        selected: $selectedDecryption,
-                        shift: $caesarDecryptionShift,
-                        key: $vigenereDecryptionKey,
-                        columnar: $columnarDecryptionKey,
-                        railFenceRails: $railFenceDecryptionRails,
-                        euclidKey: $euclidDecryptionKey,
-                        hill: hillDecryptionKey,
-                        encryption: false,
-                        animationNamespace: animationNamespace,
-                        hillBinding: hillDecBinding
-                    )
-
-                    JoinButtonView(
-                        username: joinChatViewModel.username,
-                        isEnabled: !isLoginDisabled
-                    ) {
-                        let vm = joinChatViewModel.createChatVM(
-                            selectedCipher: selectedEncryption,
-                            caesarShift: caesarEncryptionShift,
-                            vigenereKey: vigenereEncryptionKey,
-                            columnarKey: columnarEncryptionKey,
-                            hillKey: hillEncryptionKey.map { $0.map { $0 ?? 1 } },
-                            railFenceRails: railFenceEncryptionRails,
-                            euclidKey: euclidEncryptionKey,
-                            webSocketService: webSocketService
+                        CipherSelectionView(
+                            title: "Encryption",
+                            types: EncryptionType.allCases,
+                            selected: $selectedEncryption,
+                            shift: $caesarEncryptionShift,
+                            key: $vigenereEncryptionKey,
+                            columnar: $columnarEncryptionKey,
+                            railFenceRails: $railFenceEncryptionRails,
+                            euclidKey: $euclidEncryptionKey,
+                            hill: hillEncryptionKey,
+                            encryption: true,
+                            animationNamespace: animationNamespace,
+                            hillBinding: hillEncBinding
                         )
-                        chatVM = vm
-                        navigate = true
+
+                        CipherSelectionView(
+                            title: "Decryption",
+                            types: DecryptionType.allCases,
+                            selected: $selectedDecryption,
+                            shift: $caesarDecryptionShift,
+                            key: $vigenereDecryptionKey,
+                            columnar: $columnarDecryptionKey,
+                            railFenceRails: $railFenceDecryptionRails,
+                            euclidKey: $euclidDecryptionKey,
+                            hill: hillDecryptionKey,
+                            encryption: false,
+                            animationNamespace: animationNamespace,
+                            hillBinding: hillDecBinding
+                        )
+
+                        JoinButtonView(
+                            username: joinChatViewModel.username,
+                            isEnabled: !isLoginDisabled
+                        ) {
+                            let vm = joinChatViewModel.createChatVM(
+                                selectedCipher: selectedEncryption,
+                                caesarShift: caesarEncryptionShift,
+                                vigenereKey: vigenereEncryptionKey,
+                                columnarKey: columnarEncryptionKey,
+                                hillKey: hillEncryptionKey.map { $0.map { $0 ?? 1 } },
+                                railFenceRails: railFenceEncryptionRails,
+                                euclidKey: euclidEncryptionKey,
+                                webSocketService: webSocketService
+                            )
+                            chatVM = vm
+                            navigate = true
+                        }
+                    }
+                    .padding(.top, 80)
+                    .navigationDestination(isPresented: $navigate) {
+                        if let vm = chatVM {
+                            ChatView().environmentObject(vm)
+                        } else {
+                            EmptyView()
+                        }
                     }
                 }
-                .navigationDestination(isPresented: $navigate) {
-                    if let vm = chatVM {
-                        ChatView().environmentObject(vm)
-                    } else {
-                        EmptyView()
-                    }
+                .scrollIndicators(.hidden)
+                .onTapGesture {
+                    hideKeyboard()
                 }
             }
         }

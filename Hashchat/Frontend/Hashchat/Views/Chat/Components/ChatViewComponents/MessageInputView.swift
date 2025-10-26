@@ -17,7 +17,8 @@ struct MessageInputView: View {
                 .lineLimit(...4)
                 .placeholder(when: chatViewModel.messageText.isEmpty) {
                     Text("Write a message...")
-                        .foregroundColor(.secondary)
+                        .foregroundColor(.gray)
+                        .fontWeight(.bold)
                         .padding(.leading, 4)
                 }
                 .padding(12)

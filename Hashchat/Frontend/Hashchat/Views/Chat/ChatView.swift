@@ -27,13 +27,15 @@ struct ChatView: View {
                     userColors: $userColors,
                     generateColors: generateUserColors
                 )
-                MessageInputView(chatViewModel: chatViewModel, safeAreaBottomInset: safeAreaBottomInset())
+            }
+            .safeAreaInset(edge: .bottom) {
+                MessageInputView(chatViewModel: chatViewModel, safeAreaBottomInset: 0)
+                    .background(Color.clear)
             }
             .onAppear {
                 chatViewModel.webSocketService.connect(username: chatViewModel.username)
                 userColors = generateUserColors(for: otherUsers)
             }
-            .ignoresSafeArea(edges: .bottom)
             .navigationBarBackButtonHidden(true)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

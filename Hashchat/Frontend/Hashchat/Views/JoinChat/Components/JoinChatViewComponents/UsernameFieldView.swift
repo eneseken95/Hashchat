@@ -11,9 +11,12 @@ struct UsernameFieldView: View {
     @Binding var username: String
 
     var body: some View {
-        TextField("User name", text: $username)
+        TextField("", text: $username, prompt: Text("User name").foregroundColor(.gray))
             .padding(12)
-            .overlay(RoundedRectangle(cornerRadius: 20).stroke(Color.gray.opacity(0.8), lineWidth: 2))
+            .overlay(
+                RoundedRectangle(cornerRadius: 20)
+                    .stroke(Color.gray, lineWidth: 2)
+            )
             .foregroundColor(.black)
             .fontWeight(.bold)
             .padding(.horizontal, 25)

@@ -14,7 +14,7 @@
 		BC61B9052EA6B7C200A69E42 /* Exceptions for "Hashchat" folder in "Hashchat" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
-				App/Info.plist,
+				App/Resources/Info.plist,
 			);
 			target = BCB9F16A2E9A615500FC1D72 /* Hashchat */;
 		};
@@ -269,7 +269,7 @@
 				DEVELOPMENT_TEAM = FVGCA873Z7;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = Hashchat/App/Info.plist;
+				INFOPLIST_FILE = Hashchat/App/Resources/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Hashchat;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.social-networking";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -305,7 +305,7 @@
 				DEVELOPMENT_TEAM = FVGCA873Z7;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = Hashchat/App/Info.plist;
+				INFOPLIST_FILE = Hashchat/App/Resources/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Hashchat;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.social-networking";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
