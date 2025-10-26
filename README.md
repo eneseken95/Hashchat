@@ -1,6 +1,6 @@
 # Hashchat
 
-<img src="https://github.com/eneseken95/Hashchat/blob/main/Hashchat/Frontend/Hashchat/App/Assets.xcassets/AppIcon.appiconset/Hashchat%202.png" alt="Logo" width="120" height="120" />
+<img src="https://github.com/eneseken95/Hashchat/blob/main/Hashchat/Frontend/Hashchat/App/Resources/Assets.xcassets/AppIcon.appiconset/Hashchat%202.png" alt="Logo" width="120" height="120" />
 
 ### App Name: Hashchat
 This project is licensed under the Apache License 2.0. Copyright © 2025, Enes Eken.
