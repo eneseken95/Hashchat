@@ -11,6 +11,11 @@ struct MessageBubble: View {
     let message: Message
     let isCurrentUser: Bool
     let userColors: [String: Color]
+    private var timeString: String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "HH:mm"
+        return formatter.string(from: message.timestamp)
+    }
 
     var body: some View {
         HStack(alignment: .bottom, spacing: 6) {
@@ -31,6 +36,11 @@ struct MessageBubble: View {
                         .fontWeight(.semibold)
                         .multilineTextAlignment(.trailing)
                         .fixedSize(horizontal: false, vertical: true)
+
+                    Text(timeString)
+                        .font(.caption2)
+                        .foregroundColor(.white.opacity(0.8))
+                        .padding(.top, 2)
                 }
                 .padding(.vertical, 10)
                 .padding(.horizontal, 20)
@@ -74,6 +84,11 @@ struct MessageBubble: View {
                         .fontWeight(.semibold)
                         .multilineTextAlignment(.leading)
                         .fixedSize(horizontal: false, vertical: true)
+
+                    Text(timeString)
+                        .font(.caption2)
+                        .foregroundColor(.white.opacity(0.8))
+                        .padding(.top, 2)
                 }
                 .padding(.vertical, 10)
                 .padding(.horizontal, 20)
