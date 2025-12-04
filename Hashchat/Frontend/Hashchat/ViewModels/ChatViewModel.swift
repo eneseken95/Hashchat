@@ -19,6 +19,8 @@ enum EncryptionType: String, CaseIterable {
     case hill = "Hill"
     case railfence = "Rail Fence"
     case euclid = "Euclid"
+    case aes = "AES"
+    case des = "DES"
 }
 
 enum DecryptionType: String, CaseIterable {
@@ -32,6 +34,8 @@ enum DecryptionType: String, CaseIterable {
     case hill = "Hill"
     case railfence = "Rail Fence"
     case euclid = "Euclid"
+    case aes = "AES"
+    case des = "DES"
 }
 
 class ChatViewModel: ObservableObject {
@@ -48,6 +52,8 @@ class ChatViewModel: ObservableObject {
     var hillKey: [[Int]] = [[3, 3], [2, 5]]
     var railFenceRails: Int = 3
     var euclidKey: Int = 7
+    var aesKey: String = ""
+    var desKey: String = ""
 
     init(username: String, webSocketService: WebSocketService) {
         self.username = username
@@ -105,6 +111,8 @@ class ChatViewModel: ObservableObject {
         case .hill: return HillCipher(key: hillKey)
         case .railfence: return RailFenceCipher(rails: railFenceRails)
         case .euclid: return EuclidCipher(key: euclidKey)
+        case .aes: return AESCipher(key: aesKey)
+        case .des: return DESCipher(key: desKey)
         }
     }
 }

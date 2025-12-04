@@ -73,6 +73,12 @@ extension JoinChatView {
         case .hill: if hillEncryptionKey.flatMap({ $0 }).contains(nil) { return false }
         case .railfence: if railFenceEncryptionRails == nil { return false }
         case .euclid: if euclidEncryptionKey == nil { return false }
+        case .aes:
+            if aesEncryptionKey?.isEmpty ?? true { return false }
+            if aesEncryptionKey!.count < 1 { return false }
+        case .des:
+            if desEncryptionKey?.isEmpty ?? true { return false }
+            if desEncryptionKey!.count != 8 { return false }
         default: break
         }
 
@@ -83,6 +89,12 @@ extension JoinChatView {
         case .hill: if hillDecryptionKey.flatMap({ $0 }).contains(nil) { return false }
         case .railfence: if railFenceDecryptionRails == nil { return false }
         case .euclid: if euclidDecryptionKey == nil { return false }
+        case .aes:
+            if aesDecryptionKey?.isEmpty ?? true { return false }
+            if aesDecryptionKey!.count < 1 { return false }
+        case .des:
+            if desDecryptionKey?.isEmpty ?? true { return false }
+            if desDecryptionKey!.count != 8 { return false }
         default: break
         }
 

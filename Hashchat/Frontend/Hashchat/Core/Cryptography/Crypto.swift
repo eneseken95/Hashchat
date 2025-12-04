@@ -346,7 +346,7 @@ final class Crypto {
         return result
     }
 
-    // MARK: euclid cipher
+    // MARK: euclid
 
     static func euclidEncrypt(_ text: String, key: Int) -> String {
         let mod = 26
@@ -387,5 +387,61 @@ final class Crypto {
             }
         }
         return nil
+    }
+
+    // MARK: AES
+
+    static func aesEncrypt(_ text: String, key: String) -> String {
+        do {
+            let key16 = AES128CTRCore._deriveKey16(key)
+            let iv = AES128CTRCore._makeIV16()
+            let core = try AES128CTRCore(key16: key16)
+            let input = Array(text.utf8)
+            let cipher = try core.crypt(input, iv16: iv)
+            
+            return AES128CTRCore._pack(iv: iv, cipher: cipher)
+        } catch {
+            return text
+        }
+    }
+
+    static func aesDecrypt(_ text: String, key: String) -> String {
+        do {
+            let (iv, cipher) = try AES128CTRCore._unpack(text, ivLen: 16)
+            let key16 = AES128CTRCore._deriveKey16(key)
+            let core = try AES128CTRCore(key16: key16)
+            let plainBytes = try core.crypt(cipher, iv16: iv)
+            
+            return String(bytes: plainBytes, encoding: .utf8) ?? "[AES KEY ERROR]"
+        } catch {
+            return text
+        }
+    }
+
+    // MARK: DES
+
+    static func desEncrypt(_ text: String, key: String) -> String {
+        do {
+            let key8 = DESCore._deriveKey8(key)
+            let iv8 = DESCore._makeIV8()
+            let input = Array(text.utf8)
+            let cipher = try DESCore.encryptCBC(input, key8: key8, iv8: iv8)
+            
+            return DESCore._pack(iv: iv8, cipher: cipher)
+        } catch {
+            return text
+        }
+    }
+
+    static func desDecrypt(_ text: String, key: String) -> String {
+        do {
+            let (iv, cipher) = try DESCore._unpack(text, ivLen: 8)
+            let key8 = DESCore._deriveKey8(key)
+            let plain = try DESCore.decryptCBC(cipher, key8: key8, iv8: iv)
+            
+            return String(bytes: plain, encoding: .utf8) ?? "[DES KEY ERROR]"
+        } catch {
+            return text
+        }
     }
 }

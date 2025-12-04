@@ -28,6 +28,10 @@ struct JoinChatView: View {
     @State var railFenceDecryptionRails: Int? = nil
     @State var euclidEncryptionKey: Int? = nil
     @State var euclidDecryptionKey: Int? = nil
+    @State var aesEncryptionKey: String? = nil
+    @State var aesDecryptionKey: String? = nil
+    @State var desEncryptionKey: String? = nil
+    @State var desDecryptionKey: String? = nil
 
     @Namespace private var animationNamespace
 
@@ -53,6 +57,8 @@ struct JoinChatView: View {
                             columnar: $columnarEncryptionKey,
                             railFenceRails: $railFenceEncryptionRails,
                             euclidKey: $euclidEncryptionKey,
+                            aesKey: $aesEncryptionKey,
+                            desKey: $desEncryptionKey,
                             hill: hillEncryptionKey,
                             encryption: true,
                             animationNamespace: animationNamespace,
@@ -68,6 +74,8 @@ struct JoinChatView: View {
                             columnar: $columnarDecryptionKey,
                             railFenceRails: $railFenceDecryptionRails,
                             euclidKey: $euclidDecryptionKey,
+                            aesKey: $aesDecryptionKey,
+                            desKey: $desDecryptionKey,
                             hill: hillDecryptionKey,
                             encryption: false,
                             animationNamespace: animationNamespace,
@@ -86,6 +94,8 @@ struct JoinChatView: View {
                                 hillKey: hillEncryptionKey.map { $0.map { $0 ?? 1 } },
                                 railFenceRails: railFenceEncryptionRails,
                                 euclidKey: euclidEncryptionKey,
+                                aesKey: aesEncryptionKey,
+                                desKey: desEncryptionKey,
                                 webSocketService: webSocketService
                             )
                             chatVM = vm

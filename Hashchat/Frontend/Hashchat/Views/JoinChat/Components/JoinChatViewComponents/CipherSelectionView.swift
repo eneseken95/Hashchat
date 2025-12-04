@@ -17,6 +17,8 @@ struct CipherSelectionView<T: CaseIterable & RawRepresentable & Hashable>: View 
     @Binding var columnar: String?
     @Binding var railFenceRails: Int?
     @Binding var euclidKey: Int?
+    @Binding var aesKey: String?
+    @Binding var desKey: String?
     let hill: [[Int?]]
     let encryption: Bool
     let animationNamespace: Namespace.ID
@@ -82,6 +84,11 @@ struct CipherSelectionView<T: CaseIterable & RawRepresentable & Hashable>: View 
             JoinChatView.cipherTextField("Euclid Key", intBinding: $euclidKey)
         case "rail fence":
             JoinChatView.cipherTextField("Number of Rails", intBinding: $railFenceRails)
+        case "aes":
+            JoinChatView.cipherTextField("AES Key", stringBinding: $aesKey)
+        case "des":
+            JoinChatView.cipherTextField("DES Key", stringBinding: $desKey)
+
         default:
             EmptyView()
         }
