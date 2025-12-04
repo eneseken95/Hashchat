@@ -47,6 +47,8 @@ struct MessageInputView: View {
                     .clipShape(Circle())
                     .shadow(color: Color.black.opacity(0.25), radius: 2, x: 0, y: 2)
             }
+            .disabled(chatViewModel.messageText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+            .opacity(chatViewModel.messageText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? 0.4 : 1.0)
         }
         .padding(.horizontal)
         .padding(.vertical, 8)
