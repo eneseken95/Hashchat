@@ -17,6 +17,8 @@ struct HashchatApp: App {
         let webSocket = WebSocketService()
         _webSocketService = StateObject(wrappedValue: webSocket)
         _chatViewModel = StateObject(wrappedValue: ChatViewModel(username: "", webSocketService: webSocket))
+        
+        runCryptoBenchmark()
     }
 
     var body: some Scene {
