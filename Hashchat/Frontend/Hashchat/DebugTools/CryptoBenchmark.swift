@@ -32,7 +32,7 @@ func runCryptoBenchmark() {
         _ = aesCC.encrypt(text)
     }
 
-    print("\n DES CBC")
+    print("\nDES CBC")
     let desKey = DESCore._deriveKey8(key)
 
     benchmark("PURE DES ENCRYPT") {
