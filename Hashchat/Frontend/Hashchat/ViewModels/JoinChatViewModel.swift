@@ -26,30 +26,17 @@ class JoinChatViewModel: ObservableObject {
         let vm = ChatViewModel(username: trimmed, webSocketService: webSocketService)
 
         vm.selectedCipher = selectedCipher
+        vm.selectedDecryption = DecryptionType(rawValue: selectedCipher.rawValue) ?? .none
 
-        if let shift = caesarShift {
-            vm.caesarShift = shift
-        }
-        if let vKey = vigenereKey {
-            vm.vigenereKey = vKey
-        }
-        if let cKey = columnarKey {
-            vm.columnarKey = cKey
-        }
-        if let hKey = hillKey {
-            vm.hillKey = hKey
-        }
-        if let rails = railFenceRails {
-            vm.railFenceRails = rails
-        }
-        if let eKey = euclidKey {
-            vm.euclidKey = eKey
-        }
-        if let aKey = aesKey {
-            vm.aesKey = aKey
-        }
-        if let dKey = desKey {
-            vm.desKey = dKey
+        if selectedCipher != .rsa {
+            vm.caesarShift = caesarShift ?? vm.caesarShift
+            vm.vigenereKey = vigenereKey ?? vm.vigenereKey
+            vm.columnarKey = columnarKey ?? vm.columnarKey
+            vm.hillKey = hillKey ?? vm.hillKey
+            vm.railFenceRails = railFenceRails ?? vm.railFenceRails
+            vm.euclidKey = euclidKey ?? vm.euclidKey
+            vm.aesKey = aesKey ?? vm.aesKey
+            vm.desKey = desKey ?? vm.desKey
         }
 
         vm.connect()

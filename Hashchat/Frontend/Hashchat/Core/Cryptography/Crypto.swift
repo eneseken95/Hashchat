@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import Security
 
 enum CipherError: Error {
     case invalidKey
@@ -398,7 +399,7 @@ final class Crypto {
             let core = try AES128CTRCore(key16: key16)
             let input = Array(text.utf8)
             let cipher = try core.crypt(input, iv16: iv)
-            
+
             return AES128CTRCore._pack(iv: iv, cipher: cipher)
         } catch {
             return text
@@ -411,7 +412,7 @@ final class Crypto {
             let key16 = AES128CTRCore._deriveKey16(key)
             let core = try AES128CTRCore(key16: key16)
             let plainBytes = try core.crypt(cipher, iv16: iv)
-            
+
             return String(bytes: plainBytes, encoding: .utf8) ?? "[AES KEY ERROR]"
         } catch {
             return text
@@ -426,7 +427,7 @@ final class Crypto {
             let iv8 = DESCore._makeIV8()
             let input = Array(text.utf8)
             let cipher = try DESCore.encryptCBC(input, key8: key8, iv8: iv8)
-            
+
             return DESCore._pack(iv: iv8, cipher: cipher)
         } catch {
             return text
@@ -438,10 +439,133 @@ final class Crypto {
             let (iv, cipher) = try DESCore._unpack(text, ivLen: 8)
             let key8 = DESCore._deriveKey8(key)
             let plain = try DESCore.decryptCBC(cipher, key8: key8, iv8: iv)
-            
+
             return String(bytes: plain, encoding: .utf8) ?? "[DES KEY ERROR]"
         } catch {
             return text
+        }
+    }
+
+    // MARK: RSA
+
+    func generateRSAKeyPairCorrect() {
+        let attributes: [String: Any] = [
+            kSecAttrKeyType as String: kSecAttrKeyTypeRSA,
+            kSecAttrKeySizeInBits as String: 2048,
+            kSecPrivateKeyAttrs as String: [
+                kSecAttrIsPermanent as String: false,
+            ],
+        ]
+
+        var error: Unmanaged<CFError>?
+        guard let privateKey = SecKeyCreateRandomKey(attributes as CFDictionary, &error) else {
+            print("private error:", String(describing: error))
+            return
+        }
+        guard let publicKey = SecKeyCopyPublicKey(privateKey) else {
+            print("public error")
+            return
+        }
+
+        let privateDER = SecKeyCopyExternalRepresentation(privateKey, &error)! as Data
+        let rawPub = SecKeyCopyExternalRepresentation(publicKey, nil)! as Data
+        let pubDER = wrapRSAPublicKeyDER(publicKeyData: rawPub)
+
+        print("PUBLIC KEY")
+        print(pubDER.base64EncodedString())
+
+        print("\nPRIVATE KEY")
+        print(privateDER.base64EncodedString())
+    }
+
+    func wrapRSAPublicKeyDER(publicKeyData: Data) -> Data {
+        let rsaOID: [UInt8] = [
+            0x30, 0x0D,
+            0x06, 0x09,
+            0x2A, 0x86, 0x48, 0x86,
+            0xF7, 0x0D, 0x01, 0x01, 0x01,
+            0x05, 0x00,
+        ]
+
+        let bitString: [UInt8] = [0x03] + lengthBytes(publicKeyData.count + 1) + [0x00] + publicKeyData
+        let seq = [0x30] + lengthBytes(rsaOID.count + bitString.count) + rsaOID + bitString
+
+        return Data(seq)
+    }
+
+    func lengthBytes(_ length: Int) -> [UInt8] {
+        if length < 128 {
+            return [UInt8(length)]
+        }
+
+        let bytes = withUnsafeBytes(of: length.bigEndian) {
+            Array($0).drop(while: { $0 == 0 })
+        }
+        return [0x80 | UInt8(bytes.count)] + bytes
+    }
+
+    // generateRSAKeyPairCorrect()
+
+    // NOTE: Run this in a separate Playground.
+    // Run generateRSAKeyPairCorrect() there.
+    // Copy the generated PUBLIC and PRIVATE Base64 keys.
+    // Then paste them below into:
+    //
+    // private let rsaPublicKeyBase64  = "<PUBLIC KEY HERE>"
+    // private let rsaPrivateKeyBase64 = "<PRIVATE KEY HERE>"
+
+    final class RSA {
+        static let shared = RSA()
+
+        private let rsaPublicKeyBase64 = """
+        MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAuONBTlPLSQuVwMBUhXYRNaDdGvyqx2Mta2lPYov5XJv8px/9rqtfC7c9dk7Q+x7tmQf+i/M2v8JbQkqZdLZRAl/Gfc4R+Lxj0DY7LGupTpZ4E36urYbddCii8s2GDKZIHFUFrlNes5r1BLlN7Yj8YGtOfgBLP6+VdAgX0hMK66NjpiU8dws7PT0IOw9c2iWxMGxfVMwEEXe0z2vNJXLdwvtqthcFLz48dUyTlK7mBJp+1yHBqpeUbNKEMFrac7Jyw+nrbRCDNXmMOyBnQJ79K5/cpJL3virQQJtjDvyH+t267AZhFLSeTJhA/wk80rIF+Wl1zO1tNi1irQWDN/if5QIDAQAB
+        """
+
+        private let rsaPrivateKeyBase64 = """
+        MIIEogIBAAKCAQEAuONBTlPLSQuVwMBUhXYRNaDdGvyqx2Mta2lPYov5XJv8px/9rqtfC7c9dk7Q+x7tmQf+i/M2v8JbQkqZdLZRAl/Gfc4R+Lxj0DY7LGupTpZ4E36urYbddCii8s2GDKZIHFUFrlNes5r1BLlN7Yj8YGtOfgBLP6+VdAgX0hMK66NjpiU8dws7PT0IOw9c2iWxMGxfVMwEEXe0z2vNJXLdwvtqthcFLz48dUyTlK7mBJp+1yHBqpeUbNKEMFrac7Jyw+nrbRCDNXmMOyBnQJ79K5/cpJL3virQQJtjDvyH+t267AZhFLSeTJhA/wk80rIF+Wl1zO1tNi1irQWDN/if5QIDAQABAoIBAAEm10IN5xMIKbFm8U/YhbBsFVyE7OprjX2hDQ/L1+ySAy+mVR34rtGjnVQmlwotbeT5ZgZIqFNm+ksOLGkL9rK5VoLznOyL/eIu6Ez1Sbt11/8lF6D4mVoPI7639YkQIxxcEjo9Bja/tR2HqvrbEtll6boCtfVKWne70iwqlrOTkQOzFwF02P68tIR1xDPHIEMOkeX+ADOvUzIBBewr1psuQxCkrYX3jvaEX2yt8Z8MV1AB/qhPenQO5T/Yb/G0VolPxS+zTZsZZBoL0G5NEh6zczLq1dS9FLA1dHzJ0OzI7vgHi4V6/BmFHsls/BJQnRNsckj86YNQA279JSNYaTkCgYEA7NsYq8iXh1rQYkykJ5Ifygh7lw1iVpd129QEBV0Ai+YndvCLGzCHrfQ6rm7eTfMaRjtNr5ygr3M+5ifbZ1yDTG3F5nd7wMveFylEQqGg5jOlptC4WqwJn1N1vTTRJoP28dxuyh8Dcdu2wAZp2GWfHfl76HsC9DZQaF40PgpYV70CgYEAx9TcJv3eLXt1vN9ZFATguWwVLiNrb+hapxSqI4bBJ/51bLK9MOthKafk8I8WeuotELpcqt4QwJUG9iRJBtUqS7W7nTK6CNytC8MPG0ywYgvXyM0XcKjWdZC4uoyxcHNieNHRP3fN9+vOB3K6/CUom8msNMm3/kRajOIg/CGGN0kCgYBsiqcOqfkO1UYjlf2wCJ26xxJkEYUcK4KeP9Wr44fJlKpHLkqBJkc3J3Hw1+vWCu7ienDKZluYq5aKgH9iKZod3zxOtjinDIX1VTrr0gfbFpX2ETY6jxZFxkhxcY/bN6RmB99ZjsbUWZyw+P9uZHt7kAYBbsXWxkEo4urL94+ufQKBgFAxP9f18P9XmDwfdWPvQS+oDCfj1u2l1RtP06dGIKWoG/9vCzVigC9zTRCsm1zgNQ2NfDqluxtNsul8TkILsVmIqK3A+Z8sz9T0hk9ySyZNkl7mzw1K9CVh2oAijeKOq2nI6awKrAFeA+RBSoB9ePpryEu217uWOrBm3s3PtkjhAoGAIUNgqG0gUQpvSJMEylZgv6OPm3VTzf37uk7ILDx0RLozdJJtPQ3fQiwhC46eMcPQEK1FYztxVipb8B+a/sgszGqjfDlTH7XAr4/nMWYV4O4GCPLp52+pk64t/hWfE8Xe0So+eXtYuw7EefVt/JHZgcJ8HMojOxK7kITWVY+qK9Q=
+        """
+
+        private let publicKey: SecKey
+        private let privateKey: SecKey
+
+        private init() {
+            let pubData = Data(base64Encoded: rsaPublicKeyBase64)!
+            let privData = Data(base64Encoded: rsaPrivateKeyBase64)!
+
+            publicKey = RSA.loadPublicKey(from: pubData)!
+            privateKey = RSA.loadPrivateKey(from: privData)!
+        }
+
+        func encrypt(_ text: String) -> String {
+            guard let data = text.data(using: .utf8) else {
+                return text
+            }
+            let encrypted = SecKeyCreateEncryptedData(publicKey, .rsaEncryptionOAEPSHA256, data as CFData, nil) as Data?
+            return encrypted?.base64EncodedString() ?? text
+        }
+
+        func decrypt(_ text: String) -> String {
+            guard let cipher = Data(base64Encoded: text) else {
+                return text
+            }
+            let decrypted = SecKeyCreateDecryptedData(privateKey, .rsaEncryptionOAEPSHA256, cipher as CFData, nil) as Data?
+            return String(data: decrypted ?? cipher, encoding: .utf8) ?? text
+        }
+
+        private static func loadPublicKey(from data: Data) -> SecKey? {
+            let opts: [String: Any] = [
+                kSecAttrKeyType as String: kSecAttrKeyTypeRSA,
+                kSecAttrKeyClass as String: kSecAttrKeyClassPublic,
+            ]
+            return SecKeyCreateWithData(data as CFData, opts as CFDictionary, nil)
+        }
+
+        private static func loadPrivateKey(from data: Data) -> SecKey? {
+            let opts: [String: Any] = [
+                kSecAttrKeyType as String: kSecAttrKeyTypeRSA,
+                kSecAttrKeyClass as String: kSecAttrKeyClassPrivate,
+            ]
+            return SecKeyCreateWithData(data as CFData, opts as CFDictionary, nil)
         }
     }
 }

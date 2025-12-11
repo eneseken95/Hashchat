@@ -21,6 +21,7 @@ enum EncryptionType: String, CaseIterable {
     case euclid = "Euclid"
     case aes = "AES"
     case des = "DES"
+    case rsa = "RSA"
 }
 
 enum DecryptionType: String, CaseIterable {
@@ -36,12 +37,14 @@ enum DecryptionType: String, CaseIterable {
     case euclid = "Euclid"
     case aes = "AES"
     case des = "DES"
+    case rsa = "RSA"
 }
 
 class ChatViewModel: ObservableObject {
     @Published var messageText: String = ""
     @Published var messages: [Message] = []
     @Published var selectedCipher: EncryptionType = .none
+    @Published var selectedDecryption: DecryptionType = .none
 
     var webSocketService: WebSocketService
     var username: String
@@ -113,6 +116,7 @@ class ChatViewModel: ObservableObject {
         case .euclid: return EuclidCipher(key: euclidKey)
         case .aes: return AESCipher(key: aesKey)
         case .des: return DESCipher(key: desKey)
+        case .rsa: return RSACipher()
         }
     }
 }
