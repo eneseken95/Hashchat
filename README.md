@@ -3,7 +3,7 @@
 <img src="https://github.com/eneseken95/Hashchat/blob/main/Hashchat/Frontend/Hashchat/App/Resources/Assets.xcassets/AppIcon.appiconset/Hashchat%202.png" alt="Logo" width="120" height="120" />
 
 ### App Name: Hashchat
-##### Hashchat is a Swift/SwiftUI-powered real-time encrypted chat application that allows users to send messages secured with classical and modern cryptography — all implemented manually without external libraries.
+##### Hashchat is a Swift/SwiftUI-powered real-time encrypted chat application featuring classical ciphers implemented manually and modern cryptography using industry-standard frameworks.
 
 #### 📱 Application Pages:
 <img src="https://github.com/eneseken95/Hashchat/blob/main/Screenshots/Screenshot1.png" alt="Screenshoots" width="350" height="550" />
