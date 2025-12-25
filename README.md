@@ -46,6 +46,8 @@
 ##### -> Real-time: WebSocket message relay
 ##### -> API Docs: Auto-generated (Swagger UI)
 
+<img src="https://github.com/eneseken95/Hashchat/blob/main/Screenshots/Screenshot7.png" alt="Screenshoots" width="350" height="550" />
+
 #### 🔐 AES & DES — Manual vs CommonCrypto Implementations:
 ##### -> Hashchat includes both manual and library-based cryptographic systems for comparison and educational purposes.
 ##### Manual Implementations:
@@ -87,6 +89,8 @@
 5. Alex receives encrypted message
 6. Alex's app decrypts using his private key (stored in Keychain)
 7. Alex sees "Hello Alex"
+
+<img src="https://github.com/eneseken95/Hashchat/blob/main/Screenshots/Screenshot8.png" alt="Screenshoots" width="350" height="550" />
 
 ##### -> Security Features:
 - Zero-knowledge server (backend cannot decrypt messages)
