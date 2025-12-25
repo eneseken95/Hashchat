@@ -37,7 +37,6 @@ enum DecryptionType: String, CaseIterable {
     case euclid = "Euclid"
     case aes = "AES"
     case des = "DES"
-    case rsa = "RSA"
 }
 
 class ChatViewModel: ObservableObject {
@@ -45,9 +44,13 @@ class ChatViewModel: ObservableObject {
     @Published var messages: [Message] = []
     @Published var selectedCipher: EncryptionType = .none
     @Published var selectedDecryption: DecryptionType = .none
+    @Published var recipientPublicKey: String?
+    @Published var isLoadingRecipientKey: Bool = false
+    @Published var errorMessage: String?
 
     var webSocketService: WebSocketService
     var username: String
+    var recipientUsername: String?
 
     var caesarShift: Int = 3
     var vigenereKey: String = "hash"
@@ -58,10 +61,17 @@ class ChatViewModel: ObservableObject {
     var aesKey: String = ""
     var desKey: String = ""
 
-    init(username: String, webSocketService: WebSocketService) {
+    init(username: String, recipientUsername: String? = nil, webSocketService: WebSocketService) {
         self.username = username
+        self.recipientUsername = recipientUsername
         self.webSocketService = webSocketService
         bindMessages()
+
+        if let recipient = recipientUsername {
+            Task { @MainActor in
+                await fetchRecipientPublicKey(for: recipient)
+            }
+        }
     }
 
     func connect() {
@@ -70,6 +80,19 @@ class ChatViewModel: ObservableObject {
 
     func sendMessage() {
         guard !messageText.isEmpty else { return }
+
+        if selectedCipher == .rsa {
+            let messageData = messageText.data(using: .utf8) ?? Data()
+            if messageData.count > Crypto.RSA.maxPlaintextLength {
+                errorMessage = "Message too long! Max \(Crypto.RSA.maxPlaintextLength) bytes (~\(Crypto.RSA.maxPlaintextLength) chars)"
+                return
+            }
+
+            if recipientPublicKey == nil {
+                errorMessage = "Cannot send encrypted message: Recipient's public key not available"
+                return
+            }
+        }
 
         let cipher = makeCipher(for: selectedCipher)
         let messageToSend = cipher.encrypt(messageText)
@@ -80,6 +103,7 @@ class ChatViewModel: ObservableObject {
         messages.append(newMsg)
 
         messageText = ""
+        errorMessage = nil
     }
 
     private func decryptMessage(_ text: String) -> String {
@@ -116,7 +140,31 @@ class ChatViewModel: ObservableObject {
         case .euclid: return EuclidCipher(key: euclidKey)
         case .aes: return AESCipher(key: aesKey)
         case .des: return DESCipher(key: desKey)
-        case .rsa: return RSACipher()
+        case .rsa: return RSACipher(recipientPublicKey: recipientPublicKey)
         }
+    }
+
+    @MainActor
+    func fetchRecipientPublicKey(for username: String) async {
+        guard !username.isEmpty else { return }
+
+        isLoadingRecipientKey = true
+        errorMessage = nil
+
+        do {
+            print("Fetching public key for '\(username)'...")
+            let publicKey = try await HashchatAPI.shared.getPublicKey(for: username)
+            recipientPublicKey = publicKey
+            recipientUsername = username
+            print("Received public key for '\(username)'")
+        } catch let error as APIError {
+            errorMessage = error.localizedDescription
+            print("Failed to fetch public key:", error.localizedDescription)
+        } catch {
+            errorMessage = "Failed to fetch public key: \(error.localizedDescription)"
+            print("Failed to fetch public key:", error.localizedDescription)
+        }
+
+        isLoadingRecipientKey = false
     }
 }

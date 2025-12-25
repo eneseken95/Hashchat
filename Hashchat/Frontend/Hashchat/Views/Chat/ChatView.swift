@@ -13,6 +13,7 @@ struct ChatView: View {
     @State var showingLogs = false
     @State var showingUserList = false
     @State var userColors: [String: Color] = [:]
+    @State private var showE2EEBanner = true
 
     var body: some View {
         ZStack {
@@ -21,12 +22,52 @@ struct ChatView: View {
                 .ignoresSafeArea()
 
             VStack {
+                if chatViewModel.selectedCipher == .rsa && showE2EEBanner {
+                    HStack {
+                        Image(systemName: chatViewModel.recipientPublicKey != nil ? "lock.fill" : "lock.open.fill")
+                            .foregroundColor(chatViewModel.recipientPublicKey != nil ? .green : .orange)
+
+                        if chatViewModel.isLoadingRecipientKey {
+                            ProgressView()
+                                .scaleEffect(0.7)
+                            Text("Fetching encryption key...")
+                                .font(.footnote)
+                        } else if let recipient = chatViewModel.recipientUsername {
+                            Text(chatViewModel.recipientPublicKey != nil ? "Encrypted with \(recipient)" : "Waiting for \(recipient)'s key")
+                                .font(.footnote)
+                        }
+
+                        Spacer()
+
+                        Button(action: {
+                            withAnimation {
+                                showE2EEBanner = false
+                            }
+                        }) {
+                            Image(systemName: "xmark.circle.fill")
+                                .foregroundColor(.gray)
+                                .imageScale(.medium)
+                        }
+                    }
+                    .padding(.horizontal)
+                    .padding(.vertical, 8)
+                    .background(Color.gray.opacity(0.1))
+                    .transition(.move(edge: .top).combined(with: .opacity))
+                }
+
                 MessagesView(
                     messages: chatViewModel.messages,
                     currentUsername: chatViewModel.username,
                     userColors: $userColors,
                     generateColors: generateUserColors
                 )
+            }
+            .alert("Error", isPresented: .constant(chatViewModel.errorMessage != nil)) {
+                Button("OK") {
+                    chatViewModel.errorMessage = nil
+                }
+            } message: {
+                Text(chatViewModel.errorMessage ?? "")
             }
             .safeAreaInset(edge: .bottom) {
                 MessageInputView(chatViewModel: chatViewModel, safeAreaBottomInset: 0)

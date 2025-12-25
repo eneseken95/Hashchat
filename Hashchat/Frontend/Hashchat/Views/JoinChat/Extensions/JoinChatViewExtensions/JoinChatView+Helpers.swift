@@ -75,10 +75,13 @@ extension JoinChatView {
         case .euclid: if euclidEncryptionKey == nil { return false }
         case .aes:
             if aesEncryptionKey?.isEmpty ?? true { return false }
-            if aesEncryptionKey!.count < 1 { return false }
+            if (aesEncryptionKey?.count ?? 0) < 1 { return false }
         case .des:
             if desEncryptionKey?.isEmpty ?? true { return false }
-            if desEncryptionKey!.count != 8 { return false }
+            if (desEncryptionKey?.count ?? 0) != 8 { return false }
+        case .rsa:
+            let recipientTrimmed = joinChatViewModel.recipientUsername.trimmingCharacters(in: .whitespaces)
+            if recipientTrimmed.isEmpty { return false }
         default: break
         }
 
@@ -91,10 +94,10 @@ extension JoinChatView {
         case .euclid: if euclidDecryptionKey == nil { return false }
         case .aes:
             if aesDecryptionKey?.isEmpty ?? true { return false }
-            if aesDecryptionKey!.count < 1 { return false }
+            if (aesDecryptionKey?.count ?? 0) < 1 { return false }
         case .des:
             if desDecryptionKey?.isEmpty ?? true { return false }
-            if desDecryptionKey!.count != 8 { return false }
+            if (desDecryptionKey?.count ?? 0) != 8 { return false }
         default: break
         }
 

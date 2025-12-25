@@ -448,36 +448,6 @@ final class Crypto {
 
     // MARK: RSA
 
-    func generateRSAKeyPairCorrect() {
-        let attributes: [String: Any] = [
-            kSecAttrKeyType as String: kSecAttrKeyTypeRSA,
-            kSecAttrKeySizeInBits as String: 2048,
-            kSecPrivateKeyAttrs as String: [
-                kSecAttrIsPermanent as String: false,
-            ],
-        ]
-
-        var error: Unmanaged<CFError>?
-        guard let privateKey = SecKeyCreateRandomKey(attributes as CFDictionary, &error) else {
-            print("private error:", String(describing: error))
-            return
-        }
-        guard let publicKey = SecKeyCopyPublicKey(privateKey) else {
-            print("public error")
-            return
-        }
-
-        let privateDER = SecKeyCopyExternalRepresentation(privateKey, &error)! as Data
-        let rawPub = SecKeyCopyExternalRepresentation(publicKey, nil)! as Data
-        let pubDER = wrapRSAPublicKeyDER(publicKeyData: rawPub)
-
-        print("PUBLIC KEY")
-        print(pubDER.base64EncodedString())
-
-        print("\nPRIVATE KEY")
-        print(privateDER.base64EncodedString())
-    }
-
     func wrapRSAPublicKeyDER(publicKeyData: Data) -> Data {
         let rsaOID: [UInt8] = [
             0x30, 0x0D,
@@ -504,55 +474,109 @@ final class Crypto {
         return [0x80 | UInt8(bytes.count)] + bytes
     }
 
-    // generateRSAKeyPairCorrect()
-
-    // NOTE: Run this in a separate Playground.
-    // Run generateRSAKeyPairCorrect() there.
-    // Copy the generated PUBLIC and PRIVATE Base64 keys.
-    // Then paste them below into:
-    //
-    // private let rsaPublicKeyBase64  = "<PUBLIC KEY HERE>"
-    // private let rsaPrivateKeyBase64 = "<PRIVATE KEY HERE>"
-
     final class RSA {
         static let shared = RSA()
 
-        private let rsaPublicKeyBase64 = """
-        MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAuONBTlPLSQuVwMBUhXYRNaDdGvyqx2Mta2lPYov5XJv8px/9rqtfC7c9dk7Q+x7tmQf+i/M2v8JbQkqZdLZRAl/Gfc4R+Lxj0DY7LGupTpZ4E36urYbddCii8s2GDKZIHFUFrlNes5r1BLlN7Yj8YGtOfgBLP6+VdAgX0hMK66NjpiU8dws7PT0IOw9c2iWxMGxfVMwEEXe0z2vNJXLdwvtqthcFLz48dUyTlK7mBJp+1yHBqpeUbNKEMFrac7Jyw+nrbRCDNXmMOyBnQJ79K5/cpJL3virQQJtjDvyH+t267AZhFLSeTJhA/wk80rIF+Wl1zO1tNi1irQWDN/if5QIDAQAB
-        """
-
-        private let rsaPrivateKeyBase64 = """
-        MIIEogIBAAKCAQEAuONBTlPLSQuVwMBUhXYRNaDdGvyqx2Mta2lPYov5XJv8px/9rqtfC7c9dk7Q+x7tmQf+i/M2v8JbQkqZdLZRAl/Gfc4R+Lxj0DY7LGupTpZ4E36urYbddCii8s2GDKZIHFUFrlNes5r1BLlN7Yj8YGtOfgBLP6+VdAgX0hMK66NjpiU8dws7PT0IOw9c2iWxMGxfVMwEEXe0z2vNJXLdwvtqthcFLz48dUyTlK7mBJp+1yHBqpeUbNKEMFrac7Jyw+nrbRCDNXmMOyBnQJ79K5/cpJL3virQQJtjDvyH+t267AZhFLSeTJhA/wk80rIF+Wl1zO1tNi1irQWDN/if5QIDAQABAoIBAAEm10IN5xMIKbFm8U/YhbBsFVyE7OprjX2hDQ/L1+ySAy+mVR34rtGjnVQmlwotbeT5ZgZIqFNm+ksOLGkL9rK5VoLznOyL/eIu6Ez1Sbt11/8lF6D4mVoPI7639YkQIxxcEjo9Bja/tR2HqvrbEtll6boCtfVKWne70iwqlrOTkQOzFwF02P68tIR1xDPHIEMOkeX+ADOvUzIBBewr1psuQxCkrYX3jvaEX2yt8Z8MV1AB/qhPenQO5T/Yb/G0VolPxS+zTZsZZBoL0G5NEh6zczLq1dS9FLA1dHzJ0OzI7vgHi4V6/BmFHsls/BJQnRNsckj86YNQA279JSNYaTkCgYEA7NsYq8iXh1rQYkykJ5Ifygh7lw1iVpd129QEBV0Ai+YndvCLGzCHrfQ6rm7eTfMaRjtNr5ygr3M+5ifbZ1yDTG3F5nd7wMveFylEQqGg5jOlptC4WqwJn1N1vTTRJoP28dxuyh8Dcdu2wAZp2GWfHfl76HsC9DZQaF40PgpYV70CgYEAx9TcJv3eLXt1vN9ZFATguWwVLiNrb+hapxSqI4bBJ/51bLK9MOthKafk8I8WeuotELpcqt4QwJUG9iRJBtUqS7W7nTK6CNytC8MPG0ywYgvXyM0XcKjWdZC4uoyxcHNieNHRP3fN9+vOB3K6/CUom8msNMm3/kRajOIg/CGGN0kCgYBsiqcOqfkO1UYjlf2wCJ26xxJkEYUcK4KeP9Wr44fJlKpHLkqBJkc3J3Hw1+vWCu7ienDKZluYq5aKgH9iKZod3zxOtjinDIX1VTrr0gfbFpX2ETY6jxZFxkhxcY/bN6RmB99ZjsbUWZyw+P9uZHt7kAYBbsXWxkEo4urL94+ufQKBgFAxP9f18P9XmDwfdWPvQS+oDCfj1u2l1RtP06dGIKWoG/9vCzVigC9zTRCsm1zgNQ2NfDqluxtNsul8TkILsVmIqK3A+Z8sz9T0hk9ySyZNkl7mzw1K9CVh2oAijeKOq2nI6awKrAFeA+RBSoB9ePpryEu217uWOrBm3s3PtkjhAoGAIUNgqG0gUQpvSJMEylZgv6OPm3VTzf37uk7ILDx0RLozdJJtPQ3fQiwhC46eMcPQEK1FYztxVipb8B+a/sgszGqjfDlTH7XAr4/nMWYV4O4GCPLp52+pk64t/hWfE8Xe0So+eXtYuw7EefVt/JHZgcJ8HMojOxK7kITWVY+qK9Q=
-        """
-
-        private let publicKey: SecKey
-        private let privateKey: SecKey
+        private var publicKey: SecKey?
+        private var privateKey: SecKey?
+        static let maxPlaintextLength = 180
 
         private init() {
-            let pubData = Data(base64Encoded: rsaPublicKeyBase64)!
-            let privData = Data(base64Encoded: rsaPrivateKeyBase64)!
-
-            publicKey = RSA.loadPublicKey(from: pubData)!
-            privateKey = RSA.loadPrivateKey(from: privData)!
-        }
-
-        func encrypt(_ text: String) -> String {
-            guard let data = text.data(using: .utf8) else {
-                return text
+            if let privateKeyData = KeychainManager.shared.loadPrivateKey() {
+                if let privKey = RSA.importPrivateKey(from: privateKeyData) {
+                    privateKey = privKey
+                    publicKey = SecKeyCopyPublicKey(privKey)
+                    print("RSA: Loaded existing keys from Keychain")
+                } else {
+                    print("RSA: Failed to import private key from Keychain, will generate new")
+                }
+            } else {
+                print("RSA: No existing keys found in Keychain")
             }
-            let encrypted = SecKeyCreateEncryptedData(publicKey, .rsaEncryptionOAEPSHA256, data as CFData, nil) as Data?
-            return encrypted?.base64EncodedString() ?? text
         }
 
-        func decrypt(_ text: String) -> String {
-            guard let cipher = Data(base64Encoded: text) else {
-                return text
+        static func generateKeyPair() -> (publicKey: SecKey, privateKey: SecKey)? {
+            let attributes: [String: Any] = [
+                kSecAttrKeyType as String: kSecAttrKeyTypeRSA,
+                kSecAttrKeySizeInBits as String: 2048,
+                kSecPrivateKeyAttrs as String: [
+                    kSecAttrIsPermanent as String: false,
+                ],
+            ]
+
+            var error: Unmanaged<CFError>?
+            guard let privateKey = SecKeyCreateRandomKey(attributes as CFDictionary, &error) else {
+                print("RSA Key Generation Failed:", String(describing: error))
+                return nil
             }
-            let decrypted = SecKeyCreateDecryptedData(privateKey, .rsaEncryptionOAEPSHA256, cipher as CFData, nil) as Data?
-            return String(data: decrypted ?? cipher, encoding: .utf8) ?? text
+
+            guard let publicKey = SecKeyCopyPublicKey(privateKey) else {
+                print("Failed to derive public key from private key")
+                return nil
+            }
+
+            return (publicKey, privateKey)
         }
 
-        private static func loadPublicKey(from data: Data) -> SecKey? {
+        func initializeNewKeys() throws {
+            guard let (pubKey, privKey) = RSA.generateKeyPair() else {
+                throw RSAError.keyGenerationFailed
+            }
+
+            guard let privateKeyData = RSA.exportPrivateKeyData(privKey) else {
+                throw RSAError.keyExportFailed
+            }
+
+            try KeychainManager.shared.savePrivateKey(privateKeyData)
+
+            publicKey = pubKey
+            privateKey = privKey
+
+            print("RSA: Generated and saved new key pair")
+        }
+
+        func exportPublicKeyBase64() -> String? {
+            guard let publicKey = publicKey else {
+                print("No public key available to export")
+                return nil
+            }
+            return RSA.exportPublicKeyBase64(publicKey)
+        }
+
+        static func exportPublicKeyBase64(_ key: SecKey) -> String? {
+            var error: Unmanaged<CFError>?
+            guard let rawPubData = SecKeyCopyExternalRepresentation(key, &error) as Data? else {
+                print("Failed to export public key:", String(describing: error))
+                return nil
+            }
+
+            let derData = Crypto().wrapRSAPublicKeyDER(publicKeyData: rawPubData)
+            return derData.base64EncodedString()
+        }
+
+        static func exportPrivateKeyData(_ key: SecKey) -> Data? {
+            var error: Unmanaged<CFError>?
+            guard let data = SecKeyCopyExternalRepresentation(key, &error) as Data? else {
+                print("Failed to export private key:", String(describing: error))
+                return nil
+            }
+            return data
+        }
+
+        static func importPrivateKey(from data: Data) -> SecKey? {
+            let opts: [String: Any] = [
+                kSecAttrKeyType as String: kSecAttrKeyTypeRSA,
+                kSecAttrKeyClass as String: kSecAttrKeyClassPrivate,
+            ]
+            return SecKeyCreateWithData(data as CFData, opts as CFDictionary, nil)
+        }
+
+        static func importPublicKey(from base64: String) -> SecKey? {
+            guard let data = Data(base64Encoded: base64) else {
+                print("Invalid Base64 string for public key")
+                return nil
+            }
+
             let opts: [String: Any] = [
                 kSecAttrKeyType as String: kSecAttrKeyTypeRSA,
                 kSecAttrKeyClass as String: kSecAttrKeyClassPublic,
@@ -560,12 +584,87 @@ final class Crypto {
             return SecKeyCreateWithData(data as CFData, opts as CFDictionary, nil)
         }
 
-        private static func loadPrivateKey(from data: Data) -> SecKey? {
-            let opts: [String: Any] = [
-                kSecAttrKeyType as String: kSecAttrKeyTypeRSA,
-                kSecAttrKeyClass as String: kSecAttrKeyClassPrivate,
-            ]
-            return SecKeyCreateWithData(data as CFData, opts as CFDictionary, nil)
+        func encrypt(_ text: String, withPublicKey recipientPublicKeyBase64: String) -> String {
+            guard let recipientPublicKey = RSA.importPublicKey(from: recipientPublicKeyBase64) else {
+                print("Failed to import recipient's public key")
+                return text
+            }
+
+            guard let data = text.data(using: .utf8) else {
+                print("Failed to convert text to data")
+                return text
+            }
+
+            if data.count > RSA.maxPlaintextLength {
+                print("Message too long (\(data.count) bytes). Max is \(RSA.maxPlaintextLength) bytes")
+                return text
+            }
+
+            var error: Unmanaged<CFError>?
+            guard let encrypted = SecKeyCreateEncryptedData(
+                recipientPublicKey,
+                .rsaEncryptionOAEPSHA256,
+                data as CFData,
+                &error
+            ) as Data? else {
+                print("Encryption failed:", String(describing: error))
+                return text
+            }
+
+            return encrypted.base64EncodedString()
+        }
+
+        func decrypt(_ cipherBase64: String) -> String {
+            guard let privateKey = privateKey else {
+                print("No private key available for decryption")
+                return "[NO PRIVATE KEY]"
+            }
+
+            guard let cipher = Data(base64Encoded: cipherBase64) else {
+                print("Invalid Base64 cipher text")
+                return cipherBase64
+            }
+
+            var error: Unmanaged<CFError>?
+            guard let decrypted = SecKeyCreateDecryptedData(
+                privateKey,
+                .rsaEncryptionOAEPSHA256,
+                cipher as CFData,
+                &error
+            ) as Data? else {
+                print("Decryption failed:", String(describing: error))
+                return "[DECRYPTION FAILED]"
+            }
+
+            return String(data: decrypted, encoding: .utf8) ?? "[ENCODING ERROR]"
+        }
+
+        var hasKeys: Bool {
+            return publicKey != nil && privateKey != nil
+        }
+
+        func resetKeys() throws {
+            try KeychainManager.shared.deletePrivateKey()
+            publicKey = nil
+            privateKey = nil
+            print("RSA: Keys deleted")
+        }
+    }
+}
+
+enum RSAError: Error {
+    case keyGenerationFailed
+    case keyExportFailed
+    case noKeysAvailable
+
+    var localizedDescription: String {
+        switch self {
+        case .keyGenerationFailed:
+            return "Failed to generate RSA key pair"
+        case .keyExportFailed:
+            return "Failed to export RSA key"
+        case .noKeysAvailable:
+            return "No RSA keys available"
         }
     }
 }

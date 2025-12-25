@@ -6,8 +6,15 @@
 //
 
 struct RSACipher: CipherProtocol {
+    var recipientPublicKey: String?
+
     func encrypt(_ text: String) -> String {
-        Crypto.RSA.shared.encrypt(text)
+        guard let recipientKey = recipientPublicKey else {
+            print("RSACipher: No recipient public key - cannot encrypt!")
+            return "[ERROR: Recipient key not available]"
+        }
+
+        return Crypto.RSA.shared.encrypt(text, withPublicKey: recipientKey)
     }
 
     func decrypt(_ text: String) -> String {

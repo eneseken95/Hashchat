@@ -9,24 +9,17 @@ import SwiftUI
 
 @main
 struct HashchatApp: App {
-    @StateObject var joinChatViewModel = JoinChatViewModel()
-    @StateObject var webSocketService: WebSocketService
-    @StateObject var chatViewModel: ChatViewModel
-
     init() {
-        let webSocket = WebSocketService()
-        _webSocketService = StateObject(wrappedValue: webSocket)
-        _chatViewModel = StateObject(wrappedValue: ChatViewModel(username: "", webSocketService: webSocket))
-        
+        _ = Crypto.RSA.shared
+
         runCryptoBenchmark()
     }
 
     var body: some Scene {
         WindowGroup {
             JoinChatView()
-                .environmentObject(joinChatViewModel)
-                .environmentObject(chatViewModel)
-                .environmentObject(webSocketService)
+                .environmentObject(JoinChatViewModel())
+                .environmentObject(WebSocketService())
         }
     }
 }
